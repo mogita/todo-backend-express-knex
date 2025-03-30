@@ -5,7 +5,6 @@
     And transcribed from Mocha/Chai to Jest with async/await/promises and other ES6+ features
     for ease of extension of this project (any additional testing).
 */
-process.env.NODE_ENV = 'test'
 import { defaults } from 'lodash'
 import request from './util/httpRequests.ts'
 

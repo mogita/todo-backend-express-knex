@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import { curry } from 'lodash'
 import todos from './database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
 
@@ -17,7 +17,7 @@ function createToDo(req, data) {
 
 async function getAllTodos(req, res) {
   const allEntries = await todos.all()
-  return res.send(allEntries.map(_.curry(createToDo)(req)))
+  return res.send(allEntries.map(curry(createToDo)(req)))
 }
 
 async function getTodo(req, res) {
@@ -37,7 +37,7 @@ async function patchTodo(req, res) {
 
 async function deleteAllTodos(req, res) {
   const deletedEntries = await todos.clear()
-  return res.send(deletedEntries.map(_.curry(createToDo)(req)))
+  return res.send(deletedEntries.map(curry(createToDo)(req)))
 }
 
 async function deleteTodo(req, res) {
@@ -60,17 +60,11 @@ function addErrorReporting(
   }
 }
 
-const toExport = {
-  getAllTodos: { method: getAllTodos, errorMessage: 'Could not fetch all todos' },
-  getTodo: { method: getTodo, errorMessage: 'Could not fetch todo' },
-  postTodo: { method: postTodo, errorMessage: 'Could not post todo' },
-  patchTodo: { method: patchTodo, errorMessage: 'Could not patch todo' },
-  deleteAllTodos: { method: deleteAllTodos, errorMessage: 'Could not delete all todos' },
-  deleteTodo: { method: deleteTodo, errorMessage: 'Could not delete todo' },
+export default {
+  getAllTodos: addErrorReporting(getAllTodos, 'Could not fetch all todos'),
+  getTodo: addErrorReporting(getTodo, 'Could not fetch todo'),
+  postTodo: addErrorReporting(postTodo, 'Could not post todo'),
+  patchTodo: addErrorReporting(patchTodo, 'Could not patch todo'),
+  deleteAllTodos: addErrorReporting(deleteAllTodos, 'Could not delete all todos'),
+  deleteTodo: addErrorReporting(deleteTodo, 'Could not delete todo'),
 }
-
-for (let route in toExport) {
-  toExport[route] = addErrorReporting(toExport[route].method, toExport[route].errorMessage)
-}
-
-export default toExport
