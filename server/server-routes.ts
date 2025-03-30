@@ -2,7 +2,7 @@ import { curry } from 'lodash'
 import todos from './database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
 
-function createToDo(req, data) {
+function createToDo(req: Request, data: { id: number; title: string; order: number; completed: boolean }) {
   const protocol = req.protocol,
     host = req.get('host'),
     id = data.id
@@ -15,34 +15,34 @@ function createToDo(req, data) {
   }
 }
 
-async function getAllTodos(req, res) {
+async function getAllTodos(req: Request, res: Response): Promise<void> {
   const allEntries = await todos.all()
-  return res.send(allEntries.map(curry(createToDo)(req)))
+  res.send(allEntries.map(curry(createToDo)(req)))
 }
 
-async function getTodo(req, res) {
-  const todo = await todos.get(req.params.id)
-  return res.send(todo)
+async function getTodo(req: Request, res: Response): Promise<void> {
+  const todo = await todos.get(Number(req.params.id))
+  res.send(todo)
 }
 
-async function postTodo(req, res) {
+async function postTodo(req: Request, res: Response): Promise<void> {
   const created = await todos.create(req.body.title, req.body.order)
-  return res.send(createToDo(req, created))
+  res.send(createToDo(req, created))
 }
 
-async function patchTodo(req, res) {
-  const patched = await todos.update(req.params.id, req.body)
-  return res.send(createToDo(req, patched))
+async function patchTodo(req: Request, res: Response): Promise<void> {
+  const patched = await todos.update(Number(req.params.id), req.body)
+  res.send(createToDo(req, patched))
 }
 
-async function deleteAllTodos(req, res) {
+async function deleteAllTodos(req: Request, res: Response): Promise<void> {
   const deletedEntries = await todos.clear()
-  return res.send(deletedEntries.map(curry(createToDo)(req)))
+  res.send(deletedEntries.map(curry(createToDo)(req)))
 }
 
-async function deleteTodo(req, res) {
-  const deleted = await todos.delete(req.params.id)
-  return res.send(createToDo(req, deleted))
+async function deleteTodo(req: Request, res: Response): Promise<void> {
+  const deleted = await todos.delete(Number(req.params.id))
+  res.send(createToDo(req, deleted))
 }
 
 function addErrorReporting(
