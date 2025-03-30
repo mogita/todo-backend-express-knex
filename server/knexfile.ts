@@ -9,7 +9,7 @@ import 'dotenv/config'
 export default {
   test: {
     client: 'postgresql',
-    connection: process.env.DATABASE_URL,
+    connection: process.env.DATABASE_URL_TEST,
     pool: {
       min: 2,
       max: 10,

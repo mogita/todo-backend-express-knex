@@ -7,59 +7,81 @@
 */
 import { defaults } from 'lodash'
 import request from './util/httpRequests.ts'
+import knex from '../database/connection.ts'
 
 // Relative paths are used for supertest in the util file.
 const urlFromTodo = (todo: { url: string }) => new URL(todo.url)['pathname']
-const getRoot = (_) => request.get('/projects/1/todos')
 const getBody = (response) => response.body
 
 describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, () => {
+  let projectId: number
+
+  beforeEach(async () => {
+    // Create a project first and get its ID
+    const [project] = await knex('projects').insert({ name: 'Test Project' }).returning('*')
+    projectId = project.id
+    // Clear todos for this project
+    await request.delete(`/projects/${projectId}/todos`)
+  })
+
+  afterEach(async () => {
+    // Clean up todos and project
+    await request.delete(`/projects/${projectId}/todos`)
+    await knex('projects').where({ id: projectId }).del()
+  })
+
   async function createFreshTodoAndGetItsUrl(params: { title?: string; order?: number } = {}) {
     var postParams = defaults(params, { title: 'unit-test-todo' })
-    return request.post('/projects/1/todos', postParams).then(getBody).then(urlFromTodo)
+    return request.post(`/projects/${projectId}/todos`, postParams).then(getBody).then(urlFromTodo)
   }
 
   describe('The pre-requsites', () => {
     it('the api root responds to a GET (i.e. the server is up and accessible, CORS headers are set up)', async () => {
-      const response = await request.get('/projects/1/todos')
+      const response = await request.get(`/projects/${projectId}/todos`)
       expect(response.status).toBe(200)
     })
 
     it('the api root responds to a POST with the todo which was posted to it', async () => {
       const starting = { title: 'a todo' }
-      const getRoot = await request.post('/projects/1/todos', starting).then(getBody)
+      const getRoot = await request.post(`/projects/${projectId}/todos`, starting).then(getBody)
       expect(getRoot).toMatchObject(expect.objectContaining(starting))
     })
 
     it('the api root responds successfully to a DELETE', async () => {
-      const deleteRoot = await request.delete('/projects/1/todos')
+      const deleteRoot = await request.delete(`/projects/${projectId}/todos`)
       expect(deleteRoot.status).toBe(200)
     })
 
     it('after a DELETE the api root responds to a GET with a JSON representation of an empty array', async () => {
-      var deleteThenGet = await request.delete('/projects/1/todos').then(getRoot).then(getBody)
+      var deleteThenGet = await request
+        .delete(`/projects/${projectId}/todos`)
+        .then(() => request.get(`/projects/${projectId}/todos`))
+        .then(getBody)
       expect(deleteThenGet).toEqual([])
     })
   })
 
   describe('storing new todos by posting to the root url', () => {
     beforeEach(async () => {
-      return await request.delete('/projects/1/todos')
+      return await request.delete(`/projects/${projectId}/todos`)
     })
 
     it('adds a new todo to the list of todos at the root url', async () => {
       const starting = { title: 'walk the dog' }
-      var getAfterPost = await request.post('/projects/1/todos', starting).then(getRoot).then(getBody)
+      var getAfterPost = await request
+        .post(`/projects/${projectId}/todos`, starting)
+        .then(() => request.get(`/projects/${projectId}/todos`))
+        .then(getBody)
       expect(getAfterPost).toHaveLength(1)
       expect(getAfterPost[0]).toMatchObject(expect.objectContaining(starting))
     })
 
     function createTodoAndVerifyItLooksValidWith(verifyTodoExpectation) {
       return request
-        .post('/projects/1/todos', { title: 'blah' })
+        .post(`/projects/${projectId}/todos`, { title: 'blah' })
         .then(getBody)
         .then(verifyTodoExpectation)
-        .then(getRoot)
+        .then(() => request.get(`/projects/${projectId}/todos`))
         .then(getBody)
         .then((todosFromGet) => {
           verifyTodoExpectation(todosFromGet[0])
@@ -83,7 +105,7 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
 
     it('each new todo has a url, which returns a todo', async () => {
       const starting = { title: 'my todo' }
-      const newTodo = await request.post('/projects/1/todos', starting).then(getBody)
+      const newTodo = await request.post(`/projects/${projectId}/todos`, starting).then(getBody)
       const fetchedTodo = await request.get(urlFromTodo(newTodo)).then(getBody)
       expect(fetchedTodo).toMatchObject(expect.objectContaining(starting))
     })
@@ -91,16 +113,16 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
 
   describe('working with an existing todo', () => {
     beforeEach(async () => {
-      return await request.delete('/projects/1/todos')
+      return await request.delete(`/projects/${projectId}/todos`)
     })
 
     it('can navigate from a list of todos to an individual todo via urls', async () => {
       const makeTwoTodos = Promise.all([
-        request.post('/projects/1/todos', { title: 'todo the first' }),
-        request.post('/projects/1/todos', { title: 'todo the second' }),
+        request.post(`/projects/${projectId}/todos`, { title: 'todo the first' }),
+        request.post(`/projects/${projectId}/todos`, { title: 'todo the second' }),
       ])
 
-      const todoList = await makeTwoTodos.then(getRoot).then(getBody)
+      const todoList = await makeTwoTodos.then(() => request.get(`/projects/${projectId}/todos`)).then(getBody)
       expect(todoList).toHaveLength(2)
       const getAgainstUrlOfFirstTodo = await request.get(urlFromTodo(todoList[0])).then(getBody)
       expect(getAgainstUrlOfFirstTodo).toHaveProperty('title')
@@ -138,7 +160,7 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
         })
 
       const verifyRefetchedTodoList = request
-        .get('/projects/1/todos')
+        .get(`/projects/${projectId}/todos`)
         .then(getBody)
         .then((todoList) => {
           expect(todoList).toHaveLength(1)
@@ -151,14 +173,14 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
     it("can delete a todo making a DELETE request to the todo's url", async () => {
       const urlForNewTodo = await createFreshTodoAndGetItsUrl()
       await request.delete(urlForNewTodo)
-      const todosAfterCreatingAndDeletingTodo = await request.get('/projects/1/todos').then(getBody)
+      const todosAfterCreatingAndDeletingTodo = await request.get(`/projects/${projectId}/todos`).then(getBody)
       expect(todosAfterCreatingAndDeletingTodo).toEqual([])
     })
   })
 
   describe('tracking todo order', () => {
     it('can create a todo with an order field', async () => {
-      const postResult = await request.post('/projects/1/todos', { title: 'blah', order: 523 }).then(getBody)
+      const postResult = await request.post(`/projects/${projectId}/todos`, { title: 'blah', order: 523 }).then(getBody)
       expect(postResult).toHaveProperty('order', 523)
     })
 

@@ -4,12 +4,10 @@
   "scripts": {
     "heroku-postbuild": "cd server && npx knex migrate:latest",
     "client": "cd client && yarn start",
-    "server": "cd server && nodemon server.js",
     "dev:server": "cd server && NODE_ENV=development bun run --watch server.js",
-    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\"",
-    "test": "cd server && NODE_ENV=test jest --detectOpenHandles",
-    "test:watch": "cd server && NODE_ENV=test jest --watch",
-    "start": "cd server && node server.js"
+    "dev": "concurrently --kill-others-on-fail \"bun run dev:server\" \"yarn client\"",
+    "test": "cd server && NODE_ENV=test bunx knex migrate:latest && NODE_ENV=test jest --detectOpenHandles",
+    "test:watch": "cd server && NODE_ENV=test bunx knex migrate:latest && NODE_ENV=test jest --watch --detectOpenHandles"
   },
   "dependencies": {
     "body-parser": "^2.2.0",

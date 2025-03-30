@@ -1,69 +1,76 @@
 > [!WARNING]
 > I implemented this for an interview once ages ago, but now it's unmaintained.
 
-# todo-backend-express-knex
+# Todo Backend with Express and Knex
 
-This is an implementation of [Todo-Backend](http://todobackend.com/) using Node and Express for the server, Knex for database migrations and query building, and some ES6+ features such as async/await. By default, this project configures Knex to save to PostgreSQL.
+This is an implementation of [Todo-Backend](http://todobackend.com/) using Bun and Express for the server, Knex for database migrations and query building, and TypeScript for type safety. By default, this project configures Knex to save to PostgreSQL.
 
-A [production instance](https://todo-backend-express-knex.herokuapp.com/) is running on Heroku.
+## Prerequisites
 
-Bonus features include a simple frontend boostrapped with create-react-app and the todo-backend specification tests transcribed for Jest--a quick full-stack starter pack.
+- Bun (v1.0 or higher)
+- PostgreSQL
+- TypeScript
 
-## Installation
+## Setup
 
-1. Clone this repository.
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   bun install
+   ```
+3. Create a databases:
+   ```bash
+   createdb todo-app
+   createdb todo-app-test
+   ```
+4. From the "server" directory, copy `.env.example` to `.env` and fill in your database credentials:
+   ```bash
+   cp .env.example .env
+   ```
 
-    `git clone git@github.com:tonycheang/todo-backend-express-knex.git`
+## Development
 
-2. Install dependencies.
+Start the development server:
 
-    `yarn install`
+```bash
+bun run dev
 
-3. Create a postgres database for the project.
+# to run the server only
+bun run dev:server
+```
 
-    ```Bash
-    % psql postgres -U your_username_here
-    postgres=> CREATE DATABASE name_of_db;
-    postgres=> GRANT ALL PRIVILEGES ON DATABASE name_of_db TO your_username_here;
-    postgres=> \q
-    ```
+## Testing
 
-    > You could change the default database, but Knex's .returning() method will only work for PostgreSQL, MSSQL, and Oracle databases. Modifications will be needed for other databases to meet the todo-backend spec.
+Run the test suite:
 
-4. Add Postgres credentials into server/.env to allow Knex to connect to the database.
-5. Install Knex globally.
+```bash
+# make sure you have created the test database
 
-    `npm install knex -g`
+bun run test
+```
 
-6. Set up the database using Knex migrations.
+The test script will:
 
-    `cd server && knex migrate:latest`
+- Apply database migrations
+- Run all tests
+- Clean up after completion
 
-7. Start the server on [http://localhost:5000](http://localhost:5000).
+## API Endpoints
 
-    `yarn server`
+### Projects
 
-8. Test it against the spec at [Todo-Backend Specs](http://todobackend.com/specs/index.html?http://localhost:5000/)
+- `GET /projects` - List all projects
+- `GET /projects/:project_id` - Get a single project
+- `POST /projects` - Create a new project
+- `PATCH /projects/:project_id` - Update a project
+- `DELETE /projects/:project_id` - Delete a single project
+- `DELETE /projects` - Delete all projects
 
-## Bonus Features
+### Todos
 
-- Run tests locally using either.
-
-    `yarn test`
-
-    `yarn test:watch`
-
-    >The second command requires watchman  
-    >`brew install watchman`
-
-- Install create-react-app frontend starting at root directory:
-
-    `cd client && yarn install`
-
-- Run backend and frontend simultaneously from root directory.
-
-    `yarn dev`
-
-    > Note: The proxied connection will only work locally.
-    > You'll need the server to serve the frontend build if
-    > you want to host the entire project somewhere.
+- `GET /projects/:project_id/todos` - List all todos for a project
+- `GET /projects/:project_id/todos/:id` - Get a single todo
+- `POST /projects/:project_id/todos` - Create a new todo
+- `PATCH /projects/:project_id/todos/:id` - Update a todo
+- `DELETE /projects/:project_id/todos/:id` - Delete a single todo
+- `DELETE /projects/:project_id/todos` - Delete all todos for a project
