@@ -4,6 +4,7 @@
   Knex also allows for easy switching between databases. 
   But the .returning() method will only work for PostgreSQL, MSSQL, and Oracle databases.
 */
+import 'dotenv/config'
 
 export default {
   test: {
@@ -15,6 +16,7 @@ export default {
     },
     migrations: {
       tableName: 'knex_migrations',
+      extension: 'ts',
     },
   },
 
@@ -27,6 +29,7 @@ export default {
     },
     migrations: {
       tableName: 'knex_migrations',
+      extension: 'ts',
     },
   },
 
@@ -39,6 +42,7 @@ export default {
     },
     migrations: {
       tableName: 'knex_migrations',
+      extension: 'ts',
     },
   },
 
@@ -51,6 +55,7 @@ export default {
     },
     migrations: {
       tableName: 'knex_migrations',
+      extension: 'ts',
     },
   },
 }

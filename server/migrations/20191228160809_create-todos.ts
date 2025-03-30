@@ -1,4 +1,6 @@
-export const up = function (knex) {
+import type { Knex } from 'knex'
+
+export const up = function (knex: Knex) {
   return knex.schema.createTable('todos', function (table) {
     table.increments('id')
     table.string('title')
@@ -7,6 +9,6 @@ export const up = function (knex) {
   })
 }
 
-export const down = function (knex) {
+export const down = function (knex: Knex) {
   return knex.schema.dropTable('todos')
 }
