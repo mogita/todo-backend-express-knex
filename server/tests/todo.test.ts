@@ -6,9 +6,8 @@
     for ease of extension of this project (any additional testing).
 */
 process.env.NODE_ENV = 'test'
-const _ = require('lodash')
-const url = require('url')
-const request = require('./util/httpRequests.js')
+import _ from 'lodash'
+import request from './util/httpRequests.ts'
 
 // Relative paths are used for supertest in the util file.
 const urlFromTodo = (todo) => new URL(todo.url)['pathname']
@@ -16,8 +15,8 @@ const getRoot = (_) => request.get('/')
 const getBody = (response) => response.body
 
 describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, () => {
-  function createFreshTodoAndGetItsUrl(params) {
-    var postParams = _.defaults(params || {}, { title: 'blah' })
+  function createFreshTodoAndGetItsUrl(params: { title?: string; order?: number } = {}) {
+    var postParams = _.defaults(params, { title: 'blah' })
     return request.post('/', postParams).then(getBody).then(urlFromTodo)
   }
 
@@ -178,4 +177,3 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
     })
   })
 })
-

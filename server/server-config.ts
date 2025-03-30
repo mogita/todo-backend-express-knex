@@ -1,8 +1,5 @@
-require('dotenv').config()
-const express = require('express')
-const https = require('https')
-const fs = require('fs')
-const bodyParser = require('body-parser')
+import express from 'express'
+import bodyParser from 'body-parser'
 
 const app = express()
 
@@ -20,4 +17,4 @@ app.use(function (req, res, next) {
   next()
 })
 
-module.exports = app
+export default app

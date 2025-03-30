@@ -1,5 +1,5 @@
-const _ = require('lodash')
-const todos = require('./database/todo-queries.js')
+import _ from 'lodash'
+import todos from './database/todo-queries.ts'
 
 function createToDo(req, data) {
   const protocol = req.protocol,
@@ -70,4 +70,4 @@ for (let route in toExport) {
   toExport[route] = addErrorReporting(toExport[route].method, toExport[route].errorMessage)
 }
 
-module.exports = toExport
+export default toExport

@@ -23,6 +23,11 @@
     "supertest": "^7.1.0"
   },
   "devDependencies": {
+    "@types/body-parser": "^1.19.5",
+    "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.17.16",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^9.1.2"
   }
 }

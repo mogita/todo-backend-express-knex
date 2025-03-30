@@ -1,6 +1,5 @@
-const request = require('supertest')
-
-const app = require('../../server.js')
+import request from 'supertest'
+import app from '../../server.ts'
 
 // a helper function to make a POST request.
 function post(url, body) {
@@ -36,7 +35,7 @@ function del(url) {
   return httpRequest
 }
 
-module.exports = {
+export default {
   post,
   get,
   patch,

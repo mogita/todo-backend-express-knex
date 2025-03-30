@@ -1,4 +1,4 @@
-const knex = require('./connection.js')
+import knex from './connection.ts'
 
 async function all() {
   return knex('todos')
@@ -32,7 +32,7 @@ async function clear() {
   return knex('todos').del().returning('*')
 }
 
-module.exports = {
+export default {
   all,
   get,
   create,
@@ -40,4 +40,3 @@ module.exports = {
   delete: del,
   clear,
 }
-
