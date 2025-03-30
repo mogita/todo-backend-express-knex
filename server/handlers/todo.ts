@@ -1,5 +1,5 @@
 import { curry } from 'lodash'
-import todos from './database/todo-queries.ts'
+import todos from '../database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
 
 function createToDo(req: Request, data: { id: number; title: string; order: number; completed: boolean }) {
