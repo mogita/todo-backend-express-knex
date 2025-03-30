@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import todos from './database/todo-queries.ts'
+import type { Request, Response, NextFunction } from 'express'
 
 function createToDo(req, data) {
   const protocol = req.protocol,
@@ -44,13 +45,15 @@ async function deleteTodo(req, res) {
   return res.send(createToDo(req, deleted))
 }
 
-function addErrorReporting(func, message) {
-  return async function (req, res) {
+function addErrorReporting(
+  func: (req: Request, res: Response, next: NextFunction) => Promise<void> | void,
+  message: string,
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  return async function (req: Request, res: Response, next: NextFunction) {
     try {
-      return await func(req, res)
+      return await func(req, res, next)
     } catch (err) {
       console.log(`${message} caused by: ${err}`)
-
       // Not always 500, but for simplicity's sake.
       res.status(500).send(`Opps! ${message}.`)
     }

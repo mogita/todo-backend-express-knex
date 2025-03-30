@@ -6,7 +6,7 @@
     for ease of extension of this project (any additional testing).
 */
 process.env.NODE_ENV = 'test'
-import _ from 'lodash'
+import { defaults } from 'lodash'
 import request from './util/httpRequests.ts'
 
 // Relative paths are used for supertest in the util file.
@@ -16,7 +16,7 @@ const getBody = (response) => response.body
 
 describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, () => {
   function createFreshTodoAndGetItsUrl(params: { title?: string; order?: number } = {}) {
-    var postParams = _.defaults(params, { title: 'blah' })
+    var postParams = defaults(params, { title: 'blah' })
     return request.post('/', postParams).then(getBody).then(urlFromTodo)
   }
 
