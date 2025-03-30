@@ -1,7 +1,7 @@
 import { curry } from 'lodash'
 import todos from '../database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
-import { addErrorReporting } from './error_reporting.ts'
+import { addErrorReporting } from './error-reporting.ts'
 
 function createToDo(req: Request, data: { id: number; title: string; order: number; completed: boolean }) {
   const protocol = req.protocol,

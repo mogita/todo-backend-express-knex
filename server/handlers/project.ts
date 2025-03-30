@@ -1,7 +1,7 @@
 import { curry } from 'lodash'
 import projects from '../database/project-queries.ts'
 import type { Request, Response } from 'express'
-import { addErrorReporting } from './error_reporting.ts'
+import { addErrorReporting } from './error-reporting.ts'
 
 function buildProjectObj(req: Request, data: { id: number; name: string; created_at: string; updated_at: string }) {
   const protocol = req.protocol,
