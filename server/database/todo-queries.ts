@@ -1,7 +1,7 @@
 import knex from './connection.ts'
 
-async function all() {
-  return knex('todos')
+async function all(project_id: number) {
+  return knex('todos').where({ project_id })
 }
 
 async function get(id: number) {
@@ -9,8 +9,8 @@ async function get(id: number) {
   return results[0]
 }
 
-async function create(title: string, order: number) {
-  const results = await knex('todos').insert({ title, order }).returning('*')
+async function create(project_id: number, title: string, order: number) {
+  const results = await knex('todos').insert({ project_id, title, order }).returning('*')
   return results[0]
 }
 
@@ -28,8 +28,8 @@ async function del(id: number) {
   return results[0]
 }
 
-async function clear() {
-  return knex('todos').del().returning('*')
+async function clear(project_id: number) {
+  return knex('todos').where({ project_id }).del().returning('*')
 }
 
 export default {

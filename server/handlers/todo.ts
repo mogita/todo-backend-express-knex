@@ -32,27 +32,35 @@ function createToDo(
 }
 
 async function getAllTodos(req: Request, res: Response): Promise<void> {
-  const allEntries = await todos.all()
+  const allEntries = await todos.all(Number(req.params.project_id))
   res.send(allEntries.map(curry(createToDo)(req)))
 }
 
 async function getTodo(req: Request, res: Response): Promise<void> {
   const todo = await todos.get(Number(req.params.id))
+  if (!todo) {
+    res.status(404).send('Todo not found')
+    return
+  }
   res.send(todo)
 }
 
 async function postTodo(req: Request, res: Response): Promise<void> {
-  const created = await todos.create(req.body.title, req.body.order)
+  const created = await todos.create(Number(req.params.project_id), req.body.title, req.body.order)
   res.send(createToDo(req, created))
 }
 
 async function patchTodo(req: Request, res: Response): Promise<void> {
   const patched = await todos.update(Number(req.params.id), req.body)
+  if (!patched) {
+    res.status(404).send('Todo not found')
+    return
+  }
   res.send(createToDo(req, patched))
 }
 
 async function deleteAllTodos(req: Request, res: Response): Promise<void> {
-  const deletedEntries = await todos.clear()
+  const deletedEntries = await todos.clear(Number(req.params.project_id))
   res.send(deletedEntries.map(curry(createToDo)(req)))
 }
 

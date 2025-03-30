@@ -23,7 +23,12 @@ async function getAllProjects(req: Request, res: Response): Promise<void> {
 }
 
 async function getProject(req: Request, res: Response): Promise<void> {
-  res.send(await projects.get(Number(req.params.id)))
+  const result = await projects.get(Number(req.params.project_id))
+  if (!result) {
+    res.status(404).send('Project not found')
+    return
+  }
+  res.send(buildProjectObj(req, result))
 }
 
 async function postProject(req: Request, res: Response): Promise<void> {
@@ -32,7 +37,11 @@ async function postProject(req: Request, res: Response): Promise<void> {
 }
 
 async function patchProject(req: Request, res: Response): Promise<void> {
-  const patched = await projects.update(Number(req.params.id), req.body)
+  const patched = await projects.update(Number(req.params.project_id), req.body)
+  if (!patched) {
+    res.status(404).send('Project not found')
+    return
+  }
   res.send(buildProjectObj(req, patched))
 }
 
@@ -42,7 +51,7 @@ async function deleteAllProjects(req: Request, res: Response): Promise<void> {
 }
 
 async function deleteProject(req: Request, res: Response): Promise<void> {
-  const deleted = await projects.delete(Number(req.params.id))
+  const deleted = await projects.delete(Number(req.params.project_id))
   res.send(buildProjectObj(req, deleted))
 }
 
