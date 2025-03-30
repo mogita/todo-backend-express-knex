@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "nodenext",
     "strict": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
+    "noEmit": true,
     "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "isolatedModules": true
   }
 }
