@@ -1,6 +1,7 @@
 import { curry } from 'lodash'
 import todos from '../database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
+import { addErrorReporting } from './error_reporting.ts'
 
 function createToDo(req: Request, data: { id: number; title: string; order: number; completed: boolean }) {
   const protocol = req.protocol,
@@ -43,21 +44,6 @@ async function deleteAllTodos(req: Request, res: Response): Promise<void> {
 async function deleteTodo(req: Request, res: Response): Promise<void> {
   const deleted = await todos.delete(Number(req.params.id))
   res.send(createToDo(req, deleted))
-}
-
-function addErrorReporting(
-  func: (req: Request, res: Response, next: NextFunction) => Promise<void> | void,
-  message: string,
-): (req: Request, res: Response, next: NextFunction) => Promise<void> {
-  return async function (req: Request, res: Response, next: NextFunction) {
-    try {
-      return await func(req, res, next)
-    } catch (err) {
-      console.log(`${message} caused by: ${err}`)
-      // Not always 500, but for simplicity's sake.
-      res.status(500).send(`Opps! ${message}.`)
-    }
-  }
 }
 
 export default {
