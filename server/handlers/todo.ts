@@ -24,6 +24,7 @@ function createToDo(
     title: data.title,
     order: data.order,
     completed: data.completed || false,
+    project_id: data.project_id,
     created_at: data.created_at,
     updated_at: data.updated_at,
     url: `${protocol}://${host}/projects/${data.project_id}/todos/${id}`,
