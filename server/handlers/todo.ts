@@ -3,16 +3,30 @@ import todos from '../database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
 import { addErrorReporting } from './error-reporting.ts'
 
-function createToDo(req: Request, data: { id: number; title: string; order: number; completed: boolean }) {
+function createToDo(
+  req: Request,
+  data: {
+    id: number
+    title: string
+    order: number
+    completed: boolean
+    created_at: string
+    updated_at: string
+    project_id: number
+  },
+) {
   const protocol = req.protocol,
     host = req.get('host'),
     id = data.id
 
   return {
+    id: data.id,
     title: data.title,
     order: data.order,
     completed: data.completed || false,
-    url: `${protocol}://${host}/${id}`,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    url: `${protocol}://${host}/projects/${data.project_id}/todos/${id}`,
   }
 }
 
