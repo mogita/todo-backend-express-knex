@@ -1,7 +1,8 @@
+import { Response } from 'supertest'
 import request from './util/httpRequests.ts'
 import knex from '../database/connection.ts'
 
-const getBody = (response) => response.body
+const getBody = (response: Response) => response.body
 
 describe('Project API', () => {
   beforeEach(async () => {

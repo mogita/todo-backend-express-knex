@@ -5,13 +5,14 @@
     And transcribed from Mocha/Chai to Jest with async/await/promises and other ES6+ features
     for ease of extension of this project (any additional testing).
 */
+import { Response } from 'supertest'
 import { defaults } from 'lodash'
 import request from './util/httpRequests.ts'
 import knex from '../database/connection.ts'
 
 // Relative paths are used for supertest in the util file.
 const urlFromTodo = (todo: { url: string }) => new URL(todo.url)['pathname']
-const getBody = (response) => response.body
+const getBody = (response: Response) => response.body
 
 describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, () => {
   let projectId: number
