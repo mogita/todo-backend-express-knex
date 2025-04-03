@@ -17,8 +17,8 @@ async function get(id: number): Promise<Project | undefined> {
   return results[0]
 }
 
-async function create(name: string): Promise<Project> {
-  const results = await knex('projects').insert({ name }).returning('*')
+async function create(name: string, org_id: number): Promise<Project> {
+  const results = await knex('projects').insert({ name, org_id }).returning('*')
   return results[0]
 }
 
