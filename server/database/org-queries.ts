@@ -8,8 +8,11 @@ export interface Organization {
   updated_at: Date
 }
 
-async function all(): Promise<Organization[]> {
-  return knex('organizations')
+async function all(user_id: number): Promise<Organization[]> {
+  // first query the org membership for the user id, then query the orgs
+  const orgMemberships = await knex('org_members').where({ user_id }).returning('org_id')
+  const orgIds = orgMemberships.map((membership) => membership.org_id)
+  return knex('organizations').whereIn('id', orgIds)
 }
 
 async function get(id: number): Promise<Organization | undefined> {

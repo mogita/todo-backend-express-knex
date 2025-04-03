@@ -9,8 +9,8 @@ export interface OrgMember {
   updated_at: Date
 }
 
-async function all(): Promise<OrgMember[]> {
-  return knex('org_members')
+async function all(org_id: number): Promise<OrgMember[]> {
+  return knex('org_members').where({ org_id })
 }
 
 async function get(id: number): Promise<OrgMember | undefined> {
@@ -28,7 +28,10 @@ async function create(org_id: number, user_id: number, role: string): Promise<Or
   return results[0]
 }
 
-async function update(id: number, properties: { org_id?: number; user_id?: number }): Promise<OrgMember> {
+async function update(
+  id: number,
+  properties: { org_id?: number; user_id?: number; role?: string },
+): Promise<OrgMember> {
   const results = await knex('org_members')
     .where({ id })
     .update({ ...properties })
@@ -37,8 +40,9 @@ async function update(id: number, properties: { org_id?: number; user_id?: numbe
 }
 
 // delete is a reserved keyword
-async function del(id: number): Promise<OrgMember> {
-  const results = await knex('org_members').where({ id }).del().returning('*')
+async function del(org_id: number, user_id: number): Promise<OrgMember> {
+  // FIXME: check if the user has less than 1 org after deletion and need to prevent that
+  const results = await knex('org_members').where({ org_id, user_id }).del().returning('*')
   return results[0]
 }
 
