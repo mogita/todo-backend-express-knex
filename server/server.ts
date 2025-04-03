@@ -3,6 +3,7 @@ import todo from './handlers/todo.ts'
 import project from './handlers/project.ts'
 import { projectSchema } from './schemas/project.schema.ts'
 import { validateBody } from './middlewares/zod.ts'
+import { todoSchema } from './schemas/todo.schema.ts'
 
 app.get('/projects', project.getAllProjects)
 app.get('/projects/:project_id', project.getProject)
@@ -13,7 +14,7 @@ app.delete('/projects/:project_id', project.deleteProject)
 
 app.get('/projects/:project_id/todos', todo.getAllTodos)
 app.get('/projects/:project_id/todos/:id', todo.getTodo)
-app.post('/projects/:project_id/todos', todo.postTodo)
+app.post('/projects/:project_id/todos', validateBody(todoSchema), todo.postTodo)
 app.patch('/projects/:project_id/todos/:id', todo.patchTodo)
 app.delete('/projects/:project_id/todos', todo.deleteAllTodos)
 app.delete('/projects/:project_id/todos/:id', todo.deleteTodo)
