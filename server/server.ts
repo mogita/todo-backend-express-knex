@@ -1,9 +1,14 @@
 import app from './server-config.ts'
 import todo from './handlers/todo.ts'
 import project from './handlers/project.ts'
+import user from './handlers/user.ts'
 import { projectSchema } from './schemas/project.schema.ts'
 import { validateBody } from './middlewares/zod.ts'
 import { todoSchema } from './schemas/todo.schema.ts'
+import { userLoginSchema, userRegisterSchema } from './schemas/user.schema.ts'
+
+app.post('/register', validateBody(userRegisterSchema), user.postUser)
+app.post('/login', validateBody(userLoginSchema), user.loginUser)
 
 app.get('/projects', project.getAllProjects)
 app.get('/projects/:project_id', project.getProject)

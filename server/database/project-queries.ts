@@ -1,20 +1,28 @@
 import knex from './connection.ts'
 
-async function all() {
+export interface Project {
+  id: number
+  name: string
+  org_id: number
+  created_at: Date
+  updated_at: Date
+}
+
+async function all(): Promise<Project[]> {
   return knex('projects')
 }
 
-async function get(id: number) {
+async function get(id: number): Promise<Project | undefined> {
   const results = await knex('projects').where({ id })
   return results[0]
 }
 
-async function create(name: string) {
+async function create(name: string): Promise<Project> {
   const results = await knex('projects').insert({ name }).returning('*')
   return results[0]
 }
 
-async function update(id: number, properties: { name: string }) {
+async function update(id: number, properties: { name: string }): Promise<Project> {
   const results = await knex('projects')
     .where({ id })
     .update({ ...properties })
@@ -23,12 +31,12 @@ async function update(id: number, properties: { name: string }) {
 }
 
 // delete is a reserved keyword
-async function del(id: number) {
+async function del(id: number): Promise<Project> {
   const results = await knex('projects').where({ id }).del().returning('*')
   return results[0]
 }
 
-async function clear() {
+async function clear(): Promise<Project[]> {
   return knex('projects').del().returning('*')
 }
 

@@ -1,20 +1,29 @@
 import knex from './connection.ts'
 
-async function all(project_id: number) {
+export interface Todo {
+  id: number
+  project_id: number
+  title: string
+  order: number
+  created_at: Date
+  updated_at: Date
+}
+
+async function all(project_id: number): Promise<Todo[]> {
   return knex('todos').where({ project_id })
 }
 
-async function get(id: number) {
+async function get(id: number): Promise<Todo | undefined> {
   const results = await knex('todos').where({ id })
   return results[0]
 }
 
-async function create(project_id: number, title: string, order: number) {
+async function create(project_id: number, title: string, order: number): Promise<Todo> {
   const results = await knex('todos').insert({ project_id, title, order }).returning('*')
   return results[0]
 }
 
-async function update(id: number, properties: { title: string; order: number }) {
+async function update(id: number, properties: { title: string; order: number }): Promise<Todo> {
   const results = await knex('todos')
     .where({ id })
     .update({ ...properties })
@@ -23,12 +32,12 @@ async function update(id: number, properties: { title: string; order: number }) 
 }
 
 // delete is a reserved keyword
-async function del(id: number) {
+async function del(id: number): Promise<Todo> {
   const results = await knex('todos').where({ id }).del().returning('*')
   return results[0]
 }
 
-async function clear(project_id: number) {
+async function clear(project_id: number): Promise<Todo[]> {
   return knex('todos').where({ project_id }).del().returning('*')
 }
 
