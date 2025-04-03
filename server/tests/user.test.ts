@@ -1,4 +1,3 @@
-import { Response } from 'supertest'
 import request from './util/httpRequests.ts'
 import knex from '../database/connection.ts'
 import jwt from 'jsonwebtoken'
