@@ -17,6 +17,11 @@ async function get(id: number): Promise<Organization | undefined> {
   return results[0]
 }
 
+async function findByOwnerId(owner_id: number): Promise<Organization | undefined> {
+  const results = await knex('organizations').where({ owner_id })
+  return results[0]
+}
+
 async function create(name: string, owner_id: number): Promise<Organization> {
   const results = await knex('organizations').insert({ name, owner_id }).returning('*')
   return results[0]
@@ -44,6 +49,7 @@ async function clear(): Promise<Organization[]> {
 export default {
   all,
   get,
+  findByOwnerId,
   create,
   update,
   delete: del,

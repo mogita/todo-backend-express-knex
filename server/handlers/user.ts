@@ -1,11 +1,28 @@
 import type { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
+import { z } from 'zod'
+import jwt from 'jsonwebtoken'
 import userQueries, { User } from '../database/user-queries.ts'
 import orgQuries from '../database/org-queries.ts'
 import orgmemberQueries from '../database/orgmember-queries.ts'
 import { addErrorReporting } from './error-reporting.ts'
+import { userJWTSchema } from '../schemas/user.schema.ts'
 
 function buildUserObj(data: { user: User; orgId?: number; orgName?: string; role?: string }) {
+  const token = jwt.sign(
+    {
+      id: data.user.id,
+      username: data.user.username,
+      email: data.user.email,
+      role: data.role,
+      org_id: data.orgId,
+      org_name: data.orgName,
+    },
+    process.env.JWT_SECRET as string,
+    {
+      expiresIn: '24h',
+    },
+  )
   return {
     id: data.user.id,
     username: data.user.username,
@@ -13,6 +30,7 @@ function buildUserObj(data: { user: User; orgId?: number; orgName?: string; role
     org_id: data.orgId,
     org_name: data.orgName,
     role: data.role,
+    token,
     created_at: data.user.created_at,
     updated_at: data.user.updated_at,
   }
@@ -29,10 +47,16 @@ async function getAllUsers(_: Request, res: Response): Promise<void> {
   )
 }
 
-async function getUser(req: Request, res: Response): Promise<void> {
-  const result = await userQueries.get(Number(req.params.project_id))
+async function getUser(_: Request, res: Response): Promise<void> {
+  const user = res.locals.user as z.infer<typeof userJWTSchema>
+  if (!user) {
+    res.status(401).send('Unauthorized')
+    return
+  }
+
+  const result = await userQueries.get(user.id)
   if (!result) {
-    res.status(404).send('Project not found')
+    res.status(404).send('User not found')
     return
   }
   res.send(buildUserObj({ user: result }))
@@ -95,7 +119,20 @@ async function loginUser(req: Request, res: Response): Promise<void> {
     return
   }
 
-  res.send(buildUserObj({ user: result }))
+  // get org and membership
+  const org = await orgQuries.findByOwnerId(result.id)
+  if (!org) {
+    res.status(404).send('Organization not found')
+    return
+  }
+
+  const orgMember = await orgmemberQueries.findByOrgIdAndUserId(org.id, result.id)
+  if (!orgMember) {
+    res.status(404).send('Organization membership not found')
+    return
+  }
+
+  res.send(buildUserObj({ user: result, orgId: org.id, orgName: org.name, role: orgMember.role }))
 }
 
 async function patchUser(req: Request, res: Response): Promise<void> {

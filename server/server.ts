@@ -6,9 +6,12 @@ import { projectSchema } from './schemas/project.schema.ts'
 import { validateBody } from './middlewares/zod.ts'
 import { todoSchema } from './schemas/todo.schema.ts'
 import { userLoginSchema, userRegisterSchema } from './schemas/user.schema.ts'
+import { verifyAuth } from './middlewares/jwt.ts'
 
 app.post('/register', validateBody(userRegisterSchema), user.postUser)
 app.post('/login', validateBody(userLoginSchema), user.loginUser)
+app.get('/users/self', verifyAuth(['superadmin']), user.getUser)
+app.patch('/users', verifyAuth(['admin']), user.patchUser)
 
 app.get('/projects', project.getAllProjects)
 app.get('/projects/:project_id', project.getProject)

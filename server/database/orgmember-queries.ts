@@ -18,6 +18,11 @@ async function get(id: number): Promise<OrgMember | undefined> {
   return results[0]
 }
 
+async function findByOrgIdAndUserId(org_id: number, user_id: number): Promise<OrgMember | undefined> {
+  const results = await knex('org_members').where({ org_id, user_id })
+  return results[0]
+}
+
 async function create(org_id: number, user_id: number, role: string): Promise<OrgMember> {
   const results = await knex('org_members').insert({ org_id, user_id, role }).returning('*')
   return results[0]
@@ -45,6 +50,7 @@ async function clear(): Promise<OrgMember[]> {
 export default {
   all,
   get,
+  findByOrgIdAndUserId,
   create,
   update,
   delete: del,
