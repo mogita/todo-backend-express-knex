@@ -9,11 +9,15 @@ import { userJWTSchema } from '../schemas/user.schema'
 describe('User Authentication API', () => {
   // Clean up any test users before and after tests
   beforeEach(async () => {
+    await knex('org_members').del()
+    await knex('organizations').del()
     await knex('users').where({ email: 'test@example.com' }).del()
     await knex('users').where({ username: 'testuser' }).del()
   })
 
   afterEach(async () => {
+    await knex('org_members').del()
+    await knex('organizations').del()
     await knex('users').where({ email: 'test@example.com' }).del()
     await knex('users').where({ username: 'testuser' }).del()
   })
@@ -59,7 +63,7 @@ describe('User Authentication API', () => {
 
       const response = await request.post('/register', duplicateUser)
       expect(response.status).toBe(409)
-      expect(response.text).toBe('Username already exists')
+      expect(response.text).toBe('Username already in use')
     })
 
     it('should not allow registration with an existing email', async () => {
@@ -80,7 +84,7 @@ describe('User Authentication API', () => {
 
       const response = await request.post('/register', duplicateUser)
       expect(response.status).toBe(409)
-      expect(response.text).toBe('Email already exists')
+      expect(response.text).toBe('Email already in use')
     })
 
     it('should not allow registration with an empty username', async () => {
@@ -92,7 +96,11 @@ describe('User Authentication API', () => {
 
       const response = await request.post('/register', userData)
       expect(response.status).toBe(400)
-      expect(response.text).toBe('String must contain at least 1 character(s) at username')
+      expect(response.body).toHaveProperty('errors')
+      expect(response.body).toHaveProperty('message')
+      expect(response.body.errors).toHaveLength(1)
+      expect(response.body.errors[0]).toBe('string must contain at least 1 character(s): username')
+      expect(response.body.message).toBe('Validation error')
     })
 
     it('should not allow registration with an empty email', async () => {
@@ -104,7 +112,11 @@ describe('User Authentication API', () => {
 
       const response = await request.post('/register', userData)
       expect(response.status).toBe(400)
-      expect(response.text).toBe('Invalid email at email')
+      expect(response.body).toHaveProperty('errors')
+      expect(response.body).toHaveProperty('message')
+      expect(response.body.errors).toHaveLength(1)
+      expect(response.body.errors[0]).toBe('invalid email: email')
+      expect(response.body.message).toBe('Validation error')
     })
   })
 
@@ -112,11 +124,31 @@ describe('User Authentication API', () => {
     beforeEach(async () => {
       // Create a test user for login tests
       const password = await bcrypt.hash('password123', 10)
-      await knex('users').insert({
-        username: 'testuser',
-        email: 'test@example.com',
-        password,
+      const [user] = await knex('users')
+        .insert({
+          username: 'testuser',
+          email: 'test@example.com',
+          password,
+        })
+        .returning('*')
+      // create org and membership
+      const [org] = await knex('organizations')
+        .insert({
+          name: 'testorg',
+          owner_id: user.id,
+        })
+        .returning('*')
+      await knex('org_members').insert({
+        org_id: org.id,
+        user_id: user.id,
+        role: 'admin',
       })
+    })
+
+    afterEach(async () => {
+      await knex('org_members').del()
+      await knex('organizations').del()
+      await knex('users').where({ username: 'testuser' }).del()
     })
 
     it('should login successfully with correct username and password', async () => {
@@ -173,13 +205,13 @@ describe('User Authentication API', () => {
 
     it('should not be able to access projects without a valid token', async () => {
       const response = await request.get('/projects')
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(401)
       expect(response.text).toBe('Unauthorized')
     })
 
     it('should not be able to access projects with an invalid token', async () => {
       const response = await request.get('/projects').set('Authorization', 'invalid-token')
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(401)
       expect(response.text).toBe('Unauthorized')
     })
   })
