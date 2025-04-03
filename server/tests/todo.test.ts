@@ -17,26 +17,51 @@ const getBody = (response: Response) => response.body
 
 describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, () => {
   let projectId: number
+  let userId: number
   let authToken: string
   let orgId: number
 
   beforeAll(async () => {
-    const [org] = await knex('organizations').insert({ name: 'Test Organization' }).returning('*')
+    await knex('org_members').del()
+    await knex('organizations').del()
+    await knex('users').del()
+
+    const [user] = await knex('users')
+      .insert({ username: 'testuser', email: 'testuser@example.com', password: 'password' })
+      .returning('*')
+    userId = user.id
+
+    const [org] = await knex('organizations').insert({ name: 'Test Organization', owner_id: userId }).returning('*')
     orgId = org.id
+    await knex('org_members')
+      .insert({
+        org_id: orgId,
+        user_id: userId,
+        role: 'admin',
+      })
+      .returning('*')
 
     // Create a mock JWT token instead of registering a real user
     // Create a payload that matches the structure expected by the verifyToken middleware
     const mockUser = {
-      id: 999,
+      id: userId,
       username: 'testuser',
       email: 'testuser@example.com',
       org_id: orgId,
+      org_name: 'Test Organization',
+      role: 'admin',
     }
 
     // Sign the token with the same secret used in the application
     authToken = jwt.sign(mockUser, process.env.JWT_SECRET || 'test-secret', {
       expiresIn: '1h',
     })
+  })
+
+  afterAll(async () => {
+    await knex('org_members').where({ user_id: userId }).del()
+    await knex('organizations').where({ id: orgId }).del()
+    await knex('users').where({ id: userId }).del()
   })
 
   beforeEach(async () => {
@@ -55,7 +80,11 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
 
   async function createFreshTodoAndGetItsUrl(params: { title?: string; order?: number } = {}) {
     var postParams = defaults(params, { title: 'unit-test-todo' })
-    return request.post(`/projects/${projectId}/todos`, postParams).then(getBody).then(urlFromTodo)
+    return request
+      .post(`/projects/${projectId}/todos`, postParams)
+      .set('Authorization', `Bearer ${authToken}`)
+      .then(getBody)
+      .then(urlFromTodo)
   }
 
   describe('The pre-requsites', () => {
@@ -84,7 +113,7 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
       var deleteThenGet = await request
         .delete(`/projects/${projectId}/todos`)
         .set('Authorization', `Bearer ${authToken}`)
-        .then(() => request.get(`/projects/${projectId}/todos`))
+        .then(() => request.get(`/projects/${projectId}/todos`).set('Authorization', `Bearer ${authToken}`))
         .then(getBody)
       expect(deleteThenGet).toEqual([])
     })
@@ -100,7 +129,7 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
       var getAfterPost = await request
         .post(`/projects/${projectId}/todos`, starting)
         .set('Authorization', `Bearer ${authToken}`)
-        .then(() => request.get(`/projects/${projectId}/todos`))
+        .then(() => request.get(`/projects/${projectId}/todos`).set('Authorization', `Bearer ${authToken}`))
         .then(getBody)
       expect(getAfterPost).toHaveLength(1)
       expect(getAfterPost[0]).toMatchObject(expect.objectContaining(starting))
@@ -112,7 +141,7 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
         .set('Authorization', `Bearer ${authToken}`)
         .then(getBody)
         .then(verifyTodoExpectation)
-        .then(() => request.get(`/projects/${projectId}/todos`))
+        .then(() => request.get(`/projects/${projectId}/todos`).set('Authorization', `Bearer ${authToken}`))
         .then(getBody)
         .then((todosFromGet) => {
           verifyTodoExpectation(todosFromGet[0])
@@ -140,7 +169,10 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
         .post(`/projects/${projectId}/todos`, starting)
         .set('Authorization', `Bearer ${authToken}`)
         .then(getBody)
-      const fetchedTodo = await request.get(urlFromTodo(newTodo)).then(getBody)
+      const fetchedTodo = await request
+        .get(urlFromTodo(newTodo))
+        .set('Authorization', `Bearer ${authToken}`)
+        .then(getBody)
       expect(fetchedTodo).toMatchObject(expect.objectContaining(starting))
     })
   })
