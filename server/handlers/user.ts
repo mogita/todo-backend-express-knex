@@ -1,21 +1,32 @@
 import type { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
 import userQueries, { User } from '../database/user-queries.ts'
+import orgQuries from '../database/org-queries.ts'
+import orgmemberQueries from '../database/orgmember-queries.ts'
 import { addErrorReporting } from './error-reporting.ts'
 
-function buildUserObj(data: User) {
+function buildUserObj(data: { user: User; orgId?: number; orgName?: string; role?: string }) {
   return {
-    id: data.id,
-    username: data.username,
-    email: data.email,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
+    id: data.user.id,
+    username: data.user.username,
+    email: data.user.email,
+    org_id: data.orgId,
+    org_name: data.orgName,
+    role: data.role,
+    created_at: data.user.created_at,
+    updated_at: data.user.updated_at,
   }
 }
 
 async function getAllUsers(_: Request, res: Response): Promise<void> {
   const allEntries = await userQueries.all()
-  res.send(allEntries.map(buildUserObj))
+  res.send(
+    allEntries
+      .map((o) => ({
+        user: o,
+      }))
+      .map(buildUserObj),
+  )
 }
 
 async function getUser(req: Request, res: Response): Promise<void> {
@@ -24,7 +35,7 @@ async function getUser(req: Request, res: Response): Promise<void> {
     res.status(404).send('Project not found')
     return
   }
-  res.send(buildUserObj(result))
+  res.send(buildUserObj({ user: result }))
 }
 
 async function postUser(req: Request, res: Response): Promise<void> {
@@ -49,7 +60,21 @@ async function postUser(req: Request, res: Response): Promise<void> {
     return
   }
 
-  res.send(buildUserObj(created))
+  // create a default organization for the user
+  const org = await orgQuries.create('Default Organization', created.id)
+  if (!org) {
+    res.status(400).send('Could not create default organization')
+    return
+  }
+
+  // add the user to the Organization
+  const orgMember = await orgmemberQueries.create(org.id, created.id, 'admin')
+  if (!orgMember) {
+    res.status(400).send('Could not add user to organization')
+    return
+  }
+
+  res.send(buildUserObj({ user: created, orgId: org.id, orgName: org.name, role: orgMember.role }))
 }
 
 async function loginUser(req: Request, res: Response): Promise<void> {
@@ -70,7 +95,7 @@ async function loginUser(req: Request, res: Response): Promise<void> {
     return
   }
 
-  res.send(buildUserObj(result))
+  res.send(buildUserObj({ user: result }))
 }
 
 async function patchUser(req: Request, res: Response): Promise<void> {
@@ -79,7 +104,7 @@ async function patchUser(req: Request, res: Response): Promise<void> {
     res.status(404).send('Project not found')
     return
   }
-  res.send(buildUserObj(patched))
+  res.send(buildUserObj({ user: patched }))
 }
 
 export default {
