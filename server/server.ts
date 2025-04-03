@@ -1,10 +1,12 @@
 import app from './server-config.ts'
 import todo from './handlers/todo.ts'
 import project from './handlers/project.ts'
+import { projectSchema } from './schemas/project.schema.ts'
+import { validateBody } from './middlewares/zod.ts'
 
 app.get('/projects', project.getAllProjects)
 app.get('/projects/:project_id', project.getProject)
-app.post('/projects', project.postProject)
+app.post('/projects', validateBody(projectSchema), project.postProject)
 app.patch('/projects/:project_id', project.patchProject)
 app.delete('/projects', project.deleteAllProjects)
 app.delete('/projects/:project_id', project.deleteProject)
