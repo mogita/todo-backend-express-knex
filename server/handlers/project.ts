@@ -1,4 +1,3 @@
-import { curry } from 'lodash'
 import { z } from 'zod'
 import projects from '../database/project-queries.ts'
 import type { Request, Response } from 'express'
@@ -7,21 +6,20 @@ import { userJWTSchema } from '../schemas/user.schema.ts'
 
 function buildProjectObj(req: Request, data: { id: number; name: string; created_at: Date; updated_at: Date }) {
   const protocol = req.protocol,
-    host = req.get('host'),
-    id = data.id
+    host = req.get('host')
 
   return {
     id: data.id,
     name: data.name,
     created_at: data.created_at.toISOString(),
     updated_at: data.updated_at.toISOString(),
-    url: `${protocol}://${host}/projects/${id}`,
+    url: `${protocol}://${host}/projects/${data.id}`,
   }
 }
 
 async function getAllProjects(req: Request, res: Response): Promise<void> {
   const allEntries = await projects.all()
-  res.send(allEntries.map(curry(buildProjectObj)(req)))
+  res.send(allEntries.map((project) => buildProjectObj(req, project)))
 }
 
 async function getProject(req: Request, res: Response): Promise<void> {
@@ -51,7 +49,7 @@ async function patchProject(req: Request, res: Response): Promise<void> {
 
 async function deleteAllProjects(req: Request, res: Response): Promise<void> {
   const deletedEntries = await projects.clear()
-  res.send(deletedEntries.map(curry(buildProjectObj)(req)))
+  res.send(deletedEntries.map((project) => buildProjectObj(req, project)))
 }
 
 async function deleteProject(req: Request, res: Response): Promise<void> {

@@ -1,4 +1,3 @@
-import { curry } from 'lodash'
 import todos from '../database/todo-queries.ts'
 import type { Request, Response, NextFunction } from 'express'
 import { addErrorReporting } from './error-reporting.ts'

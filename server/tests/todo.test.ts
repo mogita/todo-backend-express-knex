@@ -6,7 +6,6 @@
     for ease of extension of this project (any additional testing).
 */
 import { Response } from 'supertest'
-import { defaults } from 'lodash'
 import request from './util/httpRequests.ts'
 import knex from '../database/connection.ts'
 import jwt from 'jsonwebtoken'
@@ -79,9 +78,11 @@ describe(`Todo-Backend API residing at http://localhost:${process.env.PORT}`, ()
   })
 
   async function createFreshTodoAndGetItsUrl(params: { title?: string; order?: number } = {}) {
-    var postParams = defaults(params, { title: 'unit-test-todo' })
+    if (!params.title) {
+      params.title = 'unit-test-todo'
+    }
     return request
-      .post(`/projects/${projectId}/todos`, postParams)
+      .post(`/projects/${projectId}/todos`, params)
       .set('Authorization', `Bearer ${authToken}`)
       .then(getBody)
       .then(urlFromTodo)
