@@ -1,8 +1,17 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import morgan from 'morgan'
+import rateLimit from 'express-rate-limit'
 
 const app = express()
+
+app.use(
+  rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 500, // Limit each IP to 0.83 request per second
+    message: 'Too many requests from this IP, please try again later.',
+  }),
+)
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
