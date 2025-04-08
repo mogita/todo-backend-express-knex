@@ -2,6 +2,8 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
+import compression from 'compression'
 
 const app = express()
 
@@ -12,6 +14,9 @@ app.use(
     message: 'Too many requests from this IP, please try again later.',
   }),
 )
+
+app.use(helmet())
+app.use(compression())
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
