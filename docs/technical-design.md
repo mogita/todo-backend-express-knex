@@ -200,6 +200,13 @@ A user who has limited access to view specific projects or tasks they've been in
 - **As an organization administrator**, I want to see team workload distribution so I can balance assignments
 - **As a team member**, I want to see my personal productivity metrics so I can improve my efficiency
 
+#### Billing & Subscription Management
+- **As an organization administrator**, I want to select a subscription plan so that I can access features appropriate for my team's needs
+- **As an organization administrator**, I want to manage payment methods so that I can control how my organization is billed
+- **As an organization administrator**, I want to view billing history so that I can track expenses and plan budgets
+- **As an organization administrator**, I want to download invoices so that I can submit them for reimbursement or accounting
+- **As an organization administrator**, I want to upgrade or downgrade my subscription so that I can adjust to changing team needs
+
 #### Integrations
 - **As a user**, I want to integrate with calendar applications so task deadlines appear in my schedule
 - **As a user**, I want to integrate with communication tools like Slack so I can receive notifications there
@@ -251,13 +258,13 @@ A user who has limited access to view specific projects or tasks they've been in
 ```sql
 -- Proposed extensions to existing entities
 projects {
-  // Add these fields to the existing projects table
+  -- Add these fields to the existing projects table
   description: text
   status: enum ['active', 'archived']
 }
 
 todos {
-  // Rename to 'tasks' and add these fields
+  -- Rename to 'tasks' and add these fields
   description: text
   status: enum ['todo', 'in_progress', 'done']
   assignee_id: integer REFERENCES users(id)
@@ -285,6 +292,62 @@ notifications {
   related_type: string
   created_at: timestamp
 }
+
+-- Billing and subscription entities
+subscription_plans {
+  id: integer PRIMARY KEY
+  name: string
+  description: text
+  price: decimal
+  billing_interval: string ['monthly', 'yearly']
+  features: jsonb
+  is_active: boolean
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+org_subscriptions {
+  id: integer PRIMARY KEY
+  org_id: integer REFERENCES organizations(id)
+  plan_id: integer REFERENCES subscription_plans(id)
+  status: string ['active', 'canceled', 'past_due']
+  current_period_start: timestamp
+  current_period_end: timestamp
+  cancel_at_period_end: boolean
+  stripe_subscription_id: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+payment_methods {
+  id: integer PRIMARY KEY
+  org_id: integer REFERENCES organizations(id)
+  type: string ['credit_card', 'bank_account']
+  last_four: string
+  card_brand: string
+  expiry_month: integer
+  expiry_year: integer
+  is_default: boolean
+  stripe_payment_method_id: string
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+invoices {
+  id: integer PRIMARY KEY
+  org_id: integer REFERENCES organizations(id)
+  subscription_id: integer REFERENCES org_subscriptions(id)
+  amount: decimal
+  status: string ['paid', 'open', 'void']
+  invoice_date: timestamp
+  due_date: timestamp
+  invoice_number: string
+  stripe_invoice_id: string
+  stripe_hosted_invoice_url: string
+  stripe_pdf_url: string
+  created_at: timestamp
+  updated_at: timestamp
+}
 ```
 
 ### 3.4 API Extensions
@@ -304,6 +367,27 @@ DELETE /comments/:id                             // Delete a comment
 GET    /notifications                            // Get all notifications for current user
 PATCH  /notifications/:id                        // Mark a notification as read
 DELETE /notifications                            // Delete all notifications
+
+// Subscription Plans
+GET    /subscription_plans                       // Get all available subscription plans
+GET    /subscription_plans/:id                   // Get details of a specific plan
+
+// Organization Subscriptions
+GET    /orgs/:org_id/subscription               // Get current subscription for an organization
+POST   /orgs/:org_id/subscription               // Create or update subscription for an organization
+PATCH  /orgs/:org_id/subscription/cancel        // Cancel subscription at period end
+PATCH  /orgs/:org_id/subscription/reactivate    // Reactivate a canceled subscription
+
+// Payment Methods
+GET    /orgs/:org_id/payment_methods            // Get all payment methods for an organization
+POST   /orgs/:org_id/payment_methods            // Add a new payment method (Stripe token only, no direct CC data)
+PATCH  /orgs/:org_id/payment_methods/:id/default // Set a payment method as default
+DELETE /orgs/:org_id/payment_methods/:id        // Remove a payment method
+
+// Invoices
+GET    /orgs/:org_id/invoices                   // Get all invoices for an organization
+GET    /orgs/:org_id/invoices/:id               // Get a specific invoice
+GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
 ```
 
 ## Part 4: Implementation Guide
@@ -341,7 +425,23 @@ DELETE /notifications                            // Delete all notifications
    - Implement blue-green deployment strategy for zero-downtime updates
    - Trace IDs for tracing requests across services
 
-6. **API Gateway Implementation**
+6. **Billing & Subscription System**
+   - Integrate with Stripe for payment processing and subscription management
+   - Use Stripe Elements for secure payment collection (no credit card data touches our servers)
+   - Implement webhook handlers for subscription lifecycle events
+   - Create secure payment flow with proper error handling
+   - Develop invoice generation and management system
+   - Implement subscription plan management and feature access control
+   - Set up automated billing notifications and reminders
+
+   **Rationale for Stripe Selection:**
+   - Cost-effective transaction fee-based model aligns with our initial pricing strategy
+   - Simpler integration path for our B2C product with straightforward subscription tiers
+   - Comprehensive API and documentation reduces development time
+   - Future flexibility to migrate to platforms like Chargebee if we expand to complex enterprise pricing
+     with variable subscription plans, volume-based pricing, or custom contracts for larger business customers
+
+7. **API Gateway Implementation**
    - Deploy API Gateway to handle and route all incoming traffic
    - Implement request rate limiting and throttling
    - Set up service discovery for backend services
@@ -358,12 +458,20 @@ DELETE /notifications                            // Delete all notifications
    - Task board with drag-and-drop capabilities
    - Task detail modal with comments and activity history
 
-2. **State Management**
+2. **Billing & Subscription UI**
+   - Subscription plan selection and comparison page
+   - Payment method management interface using Stripe Elements
+   - Billing history and invoice listing
+   - Subscription management dashboard
+   - Secure checkout flow with Stripe.js integration
+   - Invoice detail and download interface
+
+3. **State Management**
    - Implement global state management (Redux, Zustand, or Context API)
    - Create API service layer for communication with backend
    - Add caching strategies for improved performance
 
-3. **Real-time Integration**
+4. **Real-time Integration**
    - Implement WebSocket client connection
    - Add event listeners for real-time updates
    - Update UI components in response to real-time events
@@ -381,8 +489,6 @@ DELETE /notifications                            // Delete all notifications
    - Add database indexes for frequently queried fields
 
 ### 4.2 Quality Assurance
-
-#### 4.2.1 Testing Strategy
 
 1. **Unit Testing**
    - Use Vitest for frontend and Jest for backend unit tests
@@ -420,9 +526,7 @@ DELETE /notifications                            // Delete all notifications
    - Monitor feature adoption and usage patterns
    - Compare performance metrics between UAT and production
 
-### 4.3 Operations
-
-#### 4.3.1 Monitoring and Observability
+### 4.3 Monitoring and Observability
 
 1. **System Performance Monitoring**
    - Integrate Datadog for comprehensive monitoring
@@ -442,9 +546,7 @@ DELETE /notifications                            // Delete all notifications
    - Set up log-based alerting for error patterns
    - Create log correlation with trace IDs
 
-### 4.4 Cross-Cutting Concerns
-
-#### 4.4.1 Operational Excellence
+### 4.4 Operational Excellence
 
 1. **Workgroup Structure**
    - Establish operational excellence workgroup
