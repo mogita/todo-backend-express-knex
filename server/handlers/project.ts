@@ -1,25 +1,25 @@
-import { curry } from 'lodash'
+import { z } from 'zod'
 import projects from '../database/project-queries.ts'
 import type { Request, Response } from 'express'
 import { addErrorReporting } from './error-reporting.ts'
+import { userJWTSchema } from '../schemas/user.schema.ts'
 
-function buildProjectObj(req: Request, data: { id: number; name: string; created_at: string; updated_at: string }) {
+function buildProjectObj(req: Request, data: { id: number; name: string; created_at: Date; updated_at: Date }) {
   const protocol = req.protocol,
-    host = req.get('host'),
-    id = data.id
+    host = req.get('host')
 
   return {
     id: data.id,
     name: data.name,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    url: `${protocol}://${host}/projects/${id}`,
+    created_at: data.created_at.toISOString(),
+    updated_at: data.updated_at.toISOString(),
+    url: `${protocol}://${host}/projects/${data.id}`,
   }
 }
 
 async function getAllProjects(req: Request, res: Response): Promise<void> {
   const allEntries = await projects.all()
-  res.send(allEntries.map(curry(buildProjectObj)(req)))
+  res.send(allEntries.map((project) => buildProjectObj(req, project)))
 }
 
 async function getProject(req: Request, res: Response): Promise<void> {
@@ -32,7 +32,9 @@ async function getProject(req: Request, res: Response): Promise<void> {
 }
 
 async function postProject(req: Request, res: Response): Promise<void> {
-  const created = await projects.create(req.body.name)
+  const user = res.locals.user as z.infer<typeof userJWTSchema>
+
+  const created = await projects.create(req.body.name, user.org_id)
   res.send(buildProjectObj(req, created))
 }
 
@@ -47,7 +49,7 @@ async function patchProject(req: Request, res: Response): Promise<void> {
 
 async function deleteAllProjects(req: Request, res: Response): Promise<void> {
   const deletedEntries = await projects.clear()
-  res.send(deletedEntries.map(curry(buildProjectObj)(req)))
+  res.send(deletedEntries.map((project) => buildProjectObj(req, project)))
 }
 
 async function deleteProject(req: Request, res: Response): Promise<void> {
