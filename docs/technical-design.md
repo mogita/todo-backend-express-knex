@@ -196,6 +196,13 @@ A user who has limited access to view specific projects or tasks they've been in
 - **As a team member**, I want to upload images for my profile avatar so I can personalize my account
 - **As an organization administrator**, I want to upload an image for my organization's avatar to establish brand identity
 
+#### Search
+- **As a user**, I want to search across all content so I can quickly find relevant information
+- **As a user**, I want to filter search results by content type (tasks, projects, comments) to narrow down results
+- **As a user**, I want to see highlighted matches in search results to understand context
+- **As a user**, I want to sort search results by relevance or date to find the most important information
+- **As a user**, I want to save frequent searches for quick access to important queries
+
 ### 2.3 Future User Stories
 
 #### Reporting & Analytics
@@ -380,6 +387,31 @@ attachable_items {
   attachable_id: integer
   created_at: timestamp
 }
+
+-- For storing user-saved search queries and filters
+saved_searches {
+  id: integer PRIMARY KEY
+  user_id: integer REFERENCES users(id)
+  name: string
+  query: string
+  filters: jsonb
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+-- For maintaining a searchable index of content with PostgreSQL's full-text search capabilities (using tsvector)
+search_index_items {
+  id: integer PRIMARY KEY
+  content_type: string ['task', 'project', 'comment']
+  content_id: integer
+  org_id: integer REFERENCES organizations(id)
+  title: string
+  content: text
+  metadata: jsonb
+  ts_vector: tsvector
+  created_at: timestamp
+  updated_at: timestamp
+}
 ```
 
 ### 3.4 API Extensions
@@ -444,6 +476,15 @@ DELETE /users/avatar                            // Remove user avatar
 // Organization Avatar
 POST   /orgs/:org_id/avatar                     // Upload or update organization avatar
 DELETE /orgs/:org_id/avatar                     // Remove organization avatar
+
+// Search
+GET    /search                                  // Search across all content types
+GET    /search/tasks                            // Search only tasks
+GET    /search/projects                         // Search only projects
+GET    /search/comments                         // Search only comments
+POST   /search/saved                            // Save a search query
+GET    /search/saved                            // Get all saved searches
+DELETE /search/saved/:id                        // Delete a saved search
 ```
 
 ## Part 4: Implementation Guide
@@ -506,7 +547,18 @@ DELETE /orgs/:org_id/avatar                     // Remove organization avatar
    - Future flexibility to migrate to platforms like Chargebee if we expand to complex enterprise pricing
      with variable subscription plans, volume-based pricing, or custom contracts for larger business customers
 
-8. **API Gateway Implementation**
+8. **Search System**
+   - Implement full-text search using PostgreSQL's tsvector/tsquery capabilities
+   - Create indexing service to maintain search indices for all content types
+   - Implement relevance ranking algorithm for search results
+   - Add content type filtering and faceted search capabilities
+   - Create highlighting service to show matched terms in context
+   - Implement saved searches functionality
+   - Set up triggers for real-time index updates when content changes
+   - Implement rate limiting for search queries (max 10 requests per minute per user)
+   - Add caching layer for frequent search queries to reduce database load
+
+9. **API Gateway Implementation**
    - Deploy API Gateway to handle and route all incoming traffic
    - Implement request rate limiting and throttling
    - Set up service discovery for backend services
@@ -544,7 +596,19 @@ DELETE /orgs/:org_id/avatar                     // Remove organization avatar
    - Lightbox for full-screen image viewing
    - Video and audio players for media playback
 
-5. **Real-time Integration**
+5. **Search Components**
+   - Global search bar with autocomplete suggestions
+   - Debounced search input (300ms delay) to prevent excessive API calls
+   - Request cancellation for superseded search queries
+   - Advanced search interface with filters and sorting options
+   - Search results page with content type tabs
+   - Result highlighting to show matched terms in context
+   - Saved searches management interface
+   - Recent searches history
+   - Empty state and error handling for search results
+   - Loading states and progressive loading for search results
+
+6. **Real-time Integration**
    - Implement WebSocket client connection
    - Add event listeners for real-time updates
    - Update UI components in response to real-time events
@@ -704,6 +768,14 @@ DELETE /orgs/:org_id/avatar                     // Remove organization avatar
   - Horizontal scaling for stateless services
   - Caching strategy for frequently accessed data
   - Database sharding for large data volumes
+
+- **Search and Database Performance**
+  - Split search database from content database when I/O pressure becomes high
+  - Implement read replicas for search-heavy workloads
+  - Create separate write and read database instances for different traffic patterns
+  - Consider migration to specialized search engines (Elasticsearch, Meilisearch) for advanced search features
+  - Implement database partitioning for historical data
+  - Set up database query performance monitoring and optimization pipeline
 
 - **Integration Capabilities**
   - Design webhook system for external integrations
