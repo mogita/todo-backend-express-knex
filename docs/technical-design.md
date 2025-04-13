@@ -786,3 +786,11 @@ DELETE /search/saved/:id                        // Delete a saved search
   - Design data warehouse schema for analytics
   - Implement event tracking for user actions
   - Create reporting API for dashboard integration
+
+- **Business and Pricing Strategy Alignment**
+  - Collaborate with business and sales teams to define pricing tiers and feature limitations
+  - Develop usage tracking and metering system for billable features
+  - Implement technical enforcement of tier-based limitations
+  - Create admin dashboard for monitoring usage patterns across customer segments
+  - Design upgrade paths and upsell opportunities based on usage data
+  - Establish feedback loop between technical capabilities and sales strategies
