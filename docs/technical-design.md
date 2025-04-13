@@ -192,6 +192,9 @@ A user who has limited access to view specific projects or tasks they've been in
 - **As a team member**, I want to @mention other users in comments so they are notified
 - **As a team member**, I want to receive notifications when tasks are assigned to me or when I'm mentioned
 - **As a team member**, I want to see real-time updates when others modify tasks I'm viewing
+- **As a team member**, I want to attach images and files to tasks and comments so I can share visual information
+- **As a team member**, I want to upload images for my profile avatar so I can personalize my account
+- **As an organization administrator**, I want to upload an image for my organization's avatar to establish brand identity
 
 ### 2.3 Future User Stories
 
@@ -294,6 +297,7 @@ notifications {
 }
 
 -- Billing and subscription entities
+-- For storing available subscription tiers
 subscription_plans {
   id: integer PRIMARY KEY
   name: string
@@ -306,6 +310,7 @@ subscription_plans {
   updated_at: timestamp
 }
 
+-- For tracking organization subscriptions
 org_subscriptions {
   id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
@@ -319,6 +324,7 @@ org_subscriptions {
   updated_at: timestamp
 }
 
+-- For storing payment method information securely
 payment_methods {
   id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
@@ -333,6 +339,7 @@ payment_methods {
   updated_at: timestamp
 }
 
+-- For tracking billing history and invoice details
 invoices {
   id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
@@ -347,6 +354,31 @@ invoices {
   stripe_pdf_url: string
   created_at: timestamp
   updated_at: timestamp
+}
+
+-- Media attachments entities
+-- For storing metadata about uploaded files (filename, content type, size, storage location)
+media_attachments {
+  id: integer PRIMARY KEY
+  filename: string
+  original_filename: string
+  content_type: string
+  size_bytes: integer
+  storage_key: string
+  storage_provider: string ['s3', 'gcs']
+  owner_id: integer REFERENCES users(id)
+  org_id: integer REFERENCES organizations(id)
+  created_at: timestamp
+  updated_at: timestamp
+}
+
+-- For creating polymorphic relationships between media and various entities (tasks, comments, users, organizations)
+attachable_items {
+  id: integer PRIMARY KEY
+  media_id: integer REFERENCES media_attachments(id)
+  attachable_type: string ['task', 'comment', 'user', 'organization']
+  attachable_id: integer
+  created_at: timestamp
 }
 ```
 
@@ -388,6 +420,30 @@ DELETE /orgs/:org_id/payment_methods/:id        // Remove a payment method
 GET    /orgs/:org_id/invoices                   // Get all invoices for an organization
 GET    /orgs/:org_id/invoices/:id               // Get a specific invoice
 GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
+
+// Media Attachments
+POST   /media                                   // Upload a new media file
+GET    /media/:id                               // Get media metadata
+GET    /media/:id/content                       // Get signed URL for media content
+DELETE /media/:id                               // Delete a media attachment
+
+// Task Attachments
+POST   /projects/:project_id/todos/:id/attachments  // Attach media to a task
+GET    /projects/:project_id/todos/:id/attachments  // Get all attachments for a task
+DELETE /projects/:project_id/todos/:id/attachments/:attachment_id  // Remove attachment from task
+
+// Comment Attachments
+POST   /comments/:id/attachments                // Attach media to a comment
+GET    /comments/:id/attachments                // Get all attachments for a comment
+DELETE /comments/:id/attachments/:attachment_id // Remove attachment from comment
+
+// User Avatar
+POST   /users/avatar                            // Upload or update user avatar
+DELETE /users/avatar                            // Remove user avatar
+
+// Organization Avatar
+POST   /orgs/:org_id/avatar                     // Upload or update organization avatar
+DELETE /orgs/:org_id/avatar                     // Remove organization avatar
 ```
 
 ## Part 4: Implementation Guide
@@ -425,7 +481,16 @@ GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
    - Implement blue-green deployment strategy for zero-downtime updates
    - Trace IDs for tracing requests across services
 
-6. **Billing & Subscription System**
+6. **Media Storage System**
+   - Implement cloud storage integration with Amazon S3 or Google Cloud Storage
+   - Create secure file upload service with content type validation
+   - Support images (JPG, PNG, GIF, WebP), videos (MP4), and audio (MP3, WAV) formats
+   - Generate signed URLs for secure, time-limited access to media files
+   - Implement file size limits and quota management per organization
+   - Create thumbnail generation service for image previews
+   - Implement virus/malware scanning for uploaded files
+
+7. **Billing & Subscription System**
    - Integrate with Stripe for payment processing and subscription management
    - Use Stripe Elements for secure payment collection (no credit card data touches our servers)
    - Implement webhook handlers for subscription lifecycle events
@@ -441,7 +506,7 @@ GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
    - Future flexibility to migrate to platforms like Chargebee if we expand to complex enterprise pricing
      with variable subscription plans, volume-based pricing, or custom contracts for larger business customers
 
-7. **API Gateway Implementation**
+8. **API Gateway Implementation**
    - Deploy API Gateway to handle and route all incoming traffic
    - Implement request rate limiting and throttling
    - Set up service discovery for backend services
@@ -471,7 +536,15 @@ GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
    - Create API service layer for communication with backend
    - Add caching strategies for improved performance
 
-4. **Real-time Integration**
+4. **Media Upload Components**
+   - Drag-and-drop file upload interface for tasks and comments
+   - Image preview and cropping tool for avatars
+   - Progress indicators for file uploads
+   - Media gallery component for viewing attachments
+   - Lightbox for full-screen image viewing
+   - Video and audio players for media playback
+
+5. **Real-time Integration**
    - Implement WebSocket client connection
    - Add event listeners for real-time updates
    - Update UI components in response to real-time events
