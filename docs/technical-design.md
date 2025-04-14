@@ -3,40 +3,60 @@
 | Author      | Yun Wang                |
 | ----------- | ----------------------- |
 | Status      | Draft                   |
-| Date        | 2024-05-15              |
+| Date        | 2025-04-12              |
+
+## Executive Summary
+
+This document outlines the technical design for a multi-tenant SaaS task management application. It covers the current architecture, planned features, and implementation strategy. The application will provide project and task management capabilities with real-time collaboration, media attachments, search functionality, and tiered subscription plans.
+
+Key components include:
+- Express/TypeScript backend with PostgreSQL database
+- JWT-based authentication with role-based access control
+- Real-time collaboration using WebSockets and Redis
+- Cloud-based media storage with S3/GCS
+- Full-text search capabilities
+- Stripe integration for subscription management
+
+The document serves as a roadmap for development, outlining both immediate implementation priorities and future considerations for scaling and enhancement.
 
 ## Table of Contents
 
 1. [Decisions Made So Far](#part-1-decisions-made-so-far)
    - [Core Architecture Decisions](#11-core-architecture-decisions)
    - [Implemented Data Models](#12-implemented-data-models)
-   - [Implemented APIs](#13-implemented-apis)
-2. [User Stories](#part-2-user-stories)
-   - [User Personas](#21-user-personas)
-   - [Core User Stories](#22-core-user-stories)
-   - [Future User Stories](#23-future-user-stories)
-3. [Proposed Design Decisions](#part-3-proposed-design-decisions)
-   - [Frontend Architecture](#31-frontend-architecture)
-   - [Real-time Collaboration Strategy](#32-real-time-collaboration-strategy)
-   - [Data Model Extensions](#33-data-model-extensions)
-   - [API Extensions](#34-api-extensions)
-4. [Implementation Guide](#part-4-implementation-guide)
-   - [Development](#41-development)
-     - [Backend Implementation](#411-backend-implementation)
-     - [Frontend Implementation](#412-frontend-implementation)
-     - [Database Migration](#413-database-migration)
-   - [Quality Assurance](#42-quality-assurance)
-     - [Testing Strategy](#421-testing-strategy)
-   - [Operations](#43-operations)
-     - [Monitoring and Observability](#431-monitoring-and-observability)
-   - [Cross-Cutting Concerns](#44-cross-cutting-concerns)
-     - [Operational Excellence](#441-operational-excellence)
-5. [Development Standards](#part-5-development-standards)
-   - [Code Quality Standards](#51-code-quality-standards)
-   - [Documentation Standards](#52-documentation-standards)
-   - [CI/CD Pipeline](#53-cicd-pipeline)
-   - [Security Standards](#54-security-standards)
-   - [Future Considerations](#55-future-considerations)
+2. [API Reference](#part-2-api-reference)
+   - [Authentication & User Management](#21-authentication--user-management)
+   - [Organizations & Members](#22-organizations--members)
+   - [Projects & Tasks](#23-projects--tasks)
+   - [Collaboration](#24-collaboration)
+   - [Media & Attachments](#25-media--attachments)
+   - [Search](#26-search)
+   - [Billing & Subscriptions](#27-billing--subscriptions)
+3. [User Stories](#part-3-user-stories)
+   - [User Personas](#31-user-personas)
+   - [Core User Stories](#32-core-user-stories)
+   - [Future User Stories](#33-future-user-stories)
+4. [Proposed Design Decisions](#part-4-proposed-design-decisions)
+   - [Frontend Architecture](#41-frontend-architecture)
+   - [Real-time Collaboration Strategy](#42-real-time-collaboration-strategy)
+   - [Data Model Extensions](#43-data-model-extensions)
+5. [Implementation Guide](#part-5-implementation-guide)
+   - [Development](#51-development)
+     - [Backend Implementation](#511-backend-implementation)
+     - [Frontend Implementation](#512-frontend-implementation)
+     - [Database Migration](#513-database-migration)
+   - [Quality Assurance](#52-quality-assurance)
+     - [Testing Strategy](#521-testing-strategy)
+   - [Operations](#53-operations)
+     - [Monitoring and Observability](#531-monitoring-and-observability)
+   - [Cross-Cutting Concerns](#54-cross-cutting-concerns)
+     - [Operational Excellence](#541-operational-excellence)
+6. [Development Standards](#part-6-development-standards)
+   - [Code Quality Standards](#61-code-quality-standards)
+   - [Documentation Standards](#62-documentation-standards)
+   - [CI/CD Pipeline](#63-cicd-pipeline)
+   - [Security Standards](#64-security-standards)
+   - [Future Considerations](#65-future-considerations)
 
 ## Part 1: Decisions Made So Far
 
@@ -57,68 +77,65 @@
   - Organization-level permissions structure
 
 ### 1.2 Implemented Data Models
+
+> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at`
+
 ```sql
 -- Core entities implemented so far
 organizations {
-  id: integer PRIMARY KEY
   name: string
   owner_id: integer REFERENCES users(id)
-  created_at: timestamp
-  updated_at: timestamp
 }
 
 users {
-  id: integer PRIMARY KEY
   email: string UNIQUE
   username: string
   password: string (hashed)
-  created_at: timestamp
-  updated_at: timestamp
 }
 
 org_members {
-  id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
   user_id: integer REFERENCES users(id)
   role: string ['admin', 'member']
-  created_at: timestamp
-  updated_at: timestamp
 }
 
 projects {
-  id: integer PRIMARY KEY
   name: string
   org_id: integer REFERENCES organizations(id)
-  created_at: timestamp
-  updated_at: timestamp
 }
 
 todos {
-  id: integer PRIMARY KEY
   project_id: integer REFERENCES projects(id)
   title: string
   order: integer
   completed: boolean
   org_id: integer REFERENCES organizations(id)
-  created_at: timestamp
-  updated_at: timestamp
 }
 ```
 
-### 1.3 Implemented APIs
+## Part 2: API Reference
+
+### 2.1 Authentication & User Management
 ```typescript
 // User Authentication
 POST   /register                    // Register a new user
 POST   /login                       // Login a user
 GET    /users/self                  // Get current user info
 PATCH  /users                       // Update user info
+POST   /users/avatar                // Upload or update user avatar
+DELETE /users/avatar                // Remove user avatar
+```
 
+### 2.2 Organizations & Members
+```typescript
 // Organizations
 GET    /orgs                        // Get all organizations for current user
 GET    /orgs/:org_id                // Get a specific organization
 POST   /orgs                        // Create a new organization
 PATCH  /orgs/:org_id                // Update an organization
 DELETE /orgs/:org_id                // Delete an organization
+POST   /orgs/:org_id/avatar         // Upload or update organization avatar
+DELETE /orgs/:org_id/avatar         // Remove organization avatar
 
 // Organization Members
 GET    /orgs/:org_id/members        // Get all members of an organization
@@ -126,7 +143,10 @@ GET    /orgs/:org_id/members/:id    // Get a specific member of an organization
 POST   /orgs/:org_id/members        // Add a member to an organization
 PATCH  /orgs/:org_id/members/:id    // Update a member's role in an organization
 DELETE /orgs/:org_id/members/:id    // Remove a member from an organization
+```
 
+### 2.3 Projects & Tasks
+```typescript
 // Projects
 GET    /projects                    // Get all projects for current user
 GET    /projects/:project_id        // Get a specific project
@@ -140,13 +160,85 @@ GET    /projects/:project_id/todos         // Get all todos for a project
 GET    /projects/:project_id/todos/:id     // Get a specific todo
 POST   /projects/:project_id/todos         // Create a new todo
 PATCH  /projects/:project_id/todos/:id     // Update a todo
+PATCH  /projects/:project_id/todos/:id/assign    // Assign a task to a user
+PATCH  /projects/:project_id/todos/:id/status    // Update task status
+PATCH  /projects/:project_id/todos/:id/priority  // Update task priority
+GET    /todos/assigned                           // Get all tasks assigned to current user
 DELETE /projects/:project_id/todos         // Delete all todos for a project
 DELETE /projects/:project_id/todos/:id     // Delete a specific todo
 ```
 
-## Part 2: User Stories
+### 2.4 Collaboration
+```typescript
+// Comments
+POST   /projects/:project_id/todos/:id/comments  // Add a comment to a task
+GET    /projects/:project_id/todos/:id/comments  // Get all comments for a task
+DELETE /comments/:id                             // Delete a comment
 
-### 2.1 User Personas
+// Notifications
+GET    /notifications                            // Get all notifications for current user
+PATCH  /notifications/:id                        // Mark a notification as read
+DELETE /notifications                            // Delete all notifications
+```
+
+### 2.5 Media & Attachments
+```typescript
+// Media Attachments
+POST   /media                                   // Upload a new media file
+GET    /media/:id                               // Get media metadata
+GET    /media/:id/content                       // Get signed URL for media content
+DELETE /media/:id                               // Delete a media attachment
+
+// Task Attachments
+POST   /projects/:project_id/todos/:id/attachments  // Attach media to a task
+GET    /projects/:project_id/todos/:id/attachments  // Get all attachments for a task
+DELETE /projects/:project_id/todos/:id/attachments/:attachment_id  // Remove attachment from task
+
+// Comment Attachments
+POST   /comments/:id/attachments                // Attach media to a comment
+GET    /comments/:id/attachments                // Get all attachments for a comment
+DELETE /comments/:id/attachments/:attachment_id // Remove attachment from comment
+```
+
+### 2.6 Search
+```typescript
+// Search
+GET    /search                                  // Search across all content types
+GET    /search/tasks                            // Search only tasks
+GET    /search/projects                         // Search only projects
+GET    /search/comments                         // Search only comments
+POST   /search/saved                            // Save a search query
+GET    /search/saved                            // Get all saved searches
+DELETE /search/saved/:id                        // Delete a saved search
+```
+
+### 2.7 Billing & Subscriptions
+```typescript
+// Subscription Plans
+GET    /subscription_plans                       // Get all available subscription plans
+GET    /subscription_plans/:id                   // Get details of a specific plan
+
+// Organization Subscriptions
+GET    /orgs/:org_id/subscription               // Get current subscription for an organization
+POST   /orgs/:org_id/subscription               // Create or update subscription for an organization
+PATCH  /orgs/:org_id/subscription/cancel        // Cancel subscription at period end
+PATCH  /orgs/:org_id/subscription/reactivate    // Reactivate a canceled subscription
+
+// Payment Methods
+GET    /orgs/:org_id/payment_methods            // Get all payment methods for an organization
+POST   /orgs/:org_id/payment_methods            // Add a new payment method (Stripe token only, no direct CC data)
+PATCH  /orgs/:org_id/payment_methods/:id/default // Set a payment method as default
+DELETE /orgs/:org_id/payment_methods/:id        // Remove a payment method
+
+// Invoices
+GET    /orgs/:org_id/invoices                   // Get all invoices for an organization
+GET    /orgs/:org_id/invoices/:id               // Get a specific invoice
+GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
+```
+
+## Part 3: User Stories
+
+### 3.1 User Personas
 
 #### Organization Administrator
 A user who creates and manages an organization, with full control over projects, members, and settings.
@@ -157,7 +249,7 @@ A user who belongs to one or more organizations and contributes to projects by c
 #### Guest User
 A user who has limited access to view specific projects or tasks they've been invited to.
 
-### 2.2 Core User Stories
+### 3.2 Core User Stories
 
 #### Authentication & User Management
 - **As a user**, I want to register for an account so that I can access the system
@@ -203,7 +295,7 @@ A user who has limited access to view specific projects or tasks they've been in
 - **As a user**, I want to sort search results by relevance or date to find the most important information
 - **As a user**, I want to save frequent searches for quick access to important queries
 
-### 2.3 Future User Stories
+### 3.3 Future User Stories
 
 #### Reporting & Analytics
 - **As an organization administrator**, I want to see project progress reports so I can track completion status
@@ -222,9 +314,9 @@ A user who has limited access to view specific projects or tasks they've been in
 - **As a user**, I want to integrate with communication tools like Slack so I can receive notifications there
 - **As a developer**, I want to integrate with version control systems so code commits can be linked to tasks
 
-## Part 3: Proposed Design Decisions
+## Part 4: Proposed Design Decisions
 
-### 3.1 Frontend Architecture
+### 4.1 Frontend Architecture
 - **Recommendation**: Next.js/Remix implementing BFF pattern
   - Benefits:
     - SSR for initial loads and SEO
@@ -232,8 +324,15 @@ A user who has limited access to view specific projects or tasks they've been in
     - API security through BFF layer
   - Decision needed: Choose between Next.js vs Remix
 - Tailwind CSS and shadcn-ui for styling
+- Serverless hosting preparation with Cloudflare workers or Vercel, etc.
+- Optional: Zustand for global state management
+  - BFF handling data fetching and state management
+  - Client side state management would be useful for (if any):
+    - UI state management
+    - Client-side async operations
+    - Complex state logic that involves multiple components
 
-### 3.2 Real-time Collaboration Strategy
+### 4.2 Real-time Collaboration Strategy
 - **Proposal**: Integrated WebSocket + Redis approach
   - Initial implementation as part of main service
   - Designed for future extraction as microservice
@@ -264,11 +363,13 @@ A user who has limited access to view specific projects or tasks they've been in
   - Emoji reactions that update instantly
   - Threaded discussions with live updates
 
-### 3.3 Data Model Extensions
+### 4.3 Data Model Extensions
+
+> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at` unless otherwise noted
+
 ```sql
 -- Proposed extensions to existing entities
 projects {
-  -- Add these fields to the existing projects table
   description: text
   status: enum ['active', 'archived']
 }
@@ -282,44 +383,35 @@ todos {
   priority: enum ['low', 'medium', 'high']
 }
 
--- New entities to implement
+-- New entities by category
+
+-- Collaboration
 comments {
-  id: integer PRIMARY KEY
   task_id: integer REFERENCES tasks(id)
   user_id: integer REFERENCES users(id)
   content: text
-  created_at: timestamp
-  updated_at: timestamp
 }
 
 notifications {
-  id: integer PRIMARY KEY
   user_id: integer REFERENCES users(id)
   type: string
   content: text
   read: boolean
   related_id: integer
   related_type: string
-  created_at: timestamp
 }
 
--- Billing and subscription entities
--- For storing available subscription tiers
+-- Billing and Subscriptions
 subscription_plans {
-  id: integer PRIMARY KEY
   name: string
   description: text
   price: decimal
   billing_interval: string ['monthly', 'yearly']
   features: jsonb
   is_active: boolean
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- For tracking organization subscriptions
 org_subscriptions {
-  id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
   plan_id: integer REFERENCES subscription_plans(id)
   status: string ['active', 'canceled', 'past_due']
@@ -327,13 +419,9 @@ org_subscriptions {
   current_period_end: timestamp
   cancel_at_period_end: boolean
   stripe_subscription_id: string
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- For storing payment method information securely
 payment_methods {
-  id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
   type: string ['credit_card', 'bank_account']
   last_four: string
@@ -342,13 +430,9 @@ payment_methods {
   expiry_year: integer
   is_default: boolean
   stripe_payment_method_id: string
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- For tracking billing history and invoice details
 invoices {
-  id: integer PRIMARY KEY
   org_id: integer REFERENCES organizations(id)
   subscription_id: integer REFERENCES org_subscriptions(id)
   amount: decimal
@@ -359,14 +443,10 @@ invoices {
   stripe_invoice_id: string
   stripe_hosted_invoice_url: string
   stripe_pdf_url: string
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- Media attachments entities
--- For storing metadata about uploaded files (filename, content type, size, storage location)
+-- Media and Attachments
 media_attachments {
-  id: integer PRIMARY KEY
   filename: string
   original_filename: string
   content_type: string
@@ -375,33 +455,23 @@ media_attachments {
   storage_provider: string ['s3', 'gcs']
   owner_id: integer REFERENCES users(id)
   org_id: integer REFERENCES organizations(id)
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- For creating polymorphic relationships between media and various entities (tasks, comments, users, organizations)
 attachable_items {
-  id: integer PRIMARY KEY
   media_id: integer REFERENCES media_attachments(id)
   attachable_type: string ['task', 'comment', 'user', 'organization']
   attachable_id: integer
-  created_at: timestamp
 }
 
--- For storing user-saved search queries and filters
+-- Search
 saved_searches {
-  id: integer PRIMARY KEY
   user_id: integer REFERENCES users(id)
   name: string
   query: string
   filters: jsonb
-  created_at: timestamp
-  updated_at: timestamp
 }
 
--- For maintaining a searchable index of content with PostgreSQL's full-text search capabilities (using tsvector)
 search_index_items {
-  id: integer PRIMARY KEY
   content_type: string ['task', 'project', 'comment']
   content_id: integer
   org_id: integer REFERENCES organizations(id)
@@ -409,89 +479,14 @@ search_index_items {
   content: text
   metadata: jsonb
   ts_vector: tsvector
-  created_at: timestamp
-  updated_at: timestamp
 }
 ```
 
-### 3.4 API Extensions
-```typescript
-// Task Extensions
-PATCH  /projects/:project_id/todos/:id/assign    // Assign a task to a user
-PATCH  /projects/:project_id/todos/:id/status    // Update task status
-PATCH  /projects/:project_id/todos/:id/priority  // Update task priority
-GET    /todos/assigned                           // Get all tasks assigned to current user
+## Part 5: Implementation Guide
 
-// Comments
-POST   /projects/:project_id/todos/:id/comments  // Add a comment to a task
-GET    /projects/:project_id/todos/:id/comments  // Get all comments for a task
-DELETE /comments/:id                             // Delete a comment
+### 5.1 Development
 
-// Notifications
-GET    /notifications                            // Get all notifications for current user
-PATCH  /notifications/:id                        // Mark a notification as read
-DELETE /notifications                            // Delete all notifications
-
-// Subscription Plans
-GET    /subscription_plans                       // Get all available subscription plans
-GET    /subscription_plans/:id                   // Get details of a specific plan
-
-// Organization Subscriptions
-GET    /orgs/:org_id/subscription               // Get current subscription for an organization
-POST   /orgs/:org_id/subscription               // Create or update subscription for an organization
-PATCH  /orgs/:org_id/subscription/cancel        // Cancel subscription at period end
-PATCH  /orgs/:org_id/subscription/reactivate    // Reactivate a canceled subscription
-
-// Payment Methods
-GET    /orgs/:org_id/payment_methods            // Get all payment methods for an organization
-POST   /orgs/:org_id/payment_methods            // Add a new payment method (Stripe token only, no direct CC data)
-PATCH  /orgs/:org_id/payment_methods/:id/default // Set a payment method as default
-DELETE /orgs/:org_id/payment_methods/:id        // Remove a payment method
-
-// Invoices
-GET    /orgs/:org_id/invoices                   // Get all invoices for an organization
-GET    /orgs/:org_id/invoices/:id               // Get a specific invoice
-GET    /orgs/:org_id/invoices/:id/pdf           // Download invoice as PDF
-
-// Media Attachments
-POST   /media                                   // Upload a new media file
-GET    /media/:id                               // Get media metadata
-GET    /media/:id/content                       // Get signed URL for media content
-DELETE /media/:id                               // Delete a media attachment
-
-// Task Attachments
-POST   /projects/:project_id/todos/:id/attachments  // Attach media to a task
-GET    /projects/:project_id/todos/:id/attachments  // Get all attachments for a task
-DELETE /projects/:project_id/todos/:id/attachments/:attachment_id  // Remove attachment from task
-
-// Comment Attachments
-POST   /comments/:id/attachments                // Attach media to a comment
-GET    /comments/:id/attachments                // Get all attachments for a comment
-DELETE /comments/:id/attachments/:attachment_id // Remove attachment from comment
-
-// User Avatar
-POST   /users/avatar                            // Upload or update user avatar
-DELETE /users/avatar                            // Remove user avatar
-
-// Organization Avatar
-POST   /orgs/:org_id/avatar                     // Upload or update organization avatar
-DELETE /orgs/:org_id/avatar                     // Remove organization avatar
-
-// Search
-GET    /search                                  // Search across all content types
-GET    /search/tasks                            // Search only tasks
-GET    /search/projects                         // Search only projects
-GET    /search/comments                         // Search only comments
-POST   /search/saved                            // Save a search query
-GET    /search/saved                            // Get all saved searches
-DELETE /search/saved/:id                        // Delete a saved search
-```
-
-## Part 4: Implementation Guide
-
-### 4.1 Development
-
-#### 4.1.1 Backend Implementation
+#### 5.1.1 Backend Implementation
 
 1. **Task Enhancement**
    - Extend the existing `todos` table with additional fields (description, status, assignee, due date, priority)
@@ -540,12 +535,7 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Implement subscription plan management and feature access control
    - Set up automated billing notifications and reminders
 
-   **Rationale for Stripe Selection:**
-   - Cost-effective transaction fee-based model aligns with our initial pricing strategy
-   - Simpler integration path for our B2C product with straightforward subscription tiers
-   - Comprehensive API and documentation reduces development time
-   - Future flexibility to migrate to platforms like Chargebee if we expand to complex enterprise pricing
-     with variable subscription plans, volume-based pricing, or custom contracts for larger business customers
+   **Stripe Selection:** Cost-effective for B2C with simple pricing tiers; can migrate to Chargebee later for complex enterprise pricing if needed.
 
 8. **Search System**
    - Implement full-text search using PostgreSQL's tsvector/tsquery capabilities
@@ -566,7 +556,7 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Automatic SSL certificate rotation with Let's Encrypt
    - Implement request/response transformation and validation
 
-#### 4.1.2 Frontend Implementation
+#### 5.1.2 Frontend Implementation
 
 1. **Core UI Components**
    - Authentication screens (login, register, password reset)
@@ -584,7 +574,7 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Invoice detail and download interface
 
 3. **State Management**
-   - Implement global state management (Redux, Zustand, or Context API)
+   - Implement global state management (Zustand)
    - Create API service layer for communication with backend
    - Add caching strategies for improved performance
 
@@ -613,7 +603,7 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Add event listeners for real-time updates
    - Update UI components in response to real-time events
 
-#### 4.1.3 Database Migration
+#### 5.1.3 Database Migration
 
 1. **Schema Evolution**
    - Use Knex migrations for all schema changes
@@ -625,7 +615,7 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Implement database transactions for multi-step operations
    - Add database indexes for frequently queried fields
 
-### 4.2 Quality Assurance
+### 5.2 Quality Assurance
 
 1. **Unit Testing**
    - Use Vitest for frontend and Jest for backend unit tests
@@ -658,12 +648,9 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Structured test scenarios covering all user stories
    - Stakeholder feedback collection and prioritization process
 
-6. **Monitoring in UAT**
-   - Track critical user journeys during UAT phases
-   - Monitor feature adoption and usage patterns
-   - Compare performance metrics between UAT and production
+### 5.3 Operations
 
-### 4.3 Monitoring and Observability
+#### 5.3.1 Monitoring and Observability
 
 1. **System Performance Monitoring**
    - Integrate Datadog for comprehensive monitoring
@@ -683,7 +670,9 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Set up log-based alerting for error patterns
    - Create log correlation with trace IDs
 
-### 4.4 Operational Excellence
+### 5.4 Cross-Cutting Concerns
+
+#### 5.4.1 Operational Excellence
 
 1. **Workgroup Structure**
    - Establish operational excellence workgroup
@@ -697,9 +686,9 @@ DELETE /search/saved/:id                        // Delete a saved search
    - Regular SLO reviews and adjustments
    - Automated SLO reporting and dashboards
 
-## Part 5: Development Standards
+## Part 6: Development Standards
 
-### 5.1 Code Quality Standards
+### 6.1 Code Quality Standards
 
 - **Code Style**
   - Use ESLint with TypeScript rules
@@ -716,10 +705,11 @@ DELETE /search/saved/:id                        // Delete a saved search
   - Automated static analysis integrated with PR process
   - Regular code quality retrospectives
 
-### 5.2 Documentation Standards
+### 6.2 Documentation Standards
 
 - **API Documentation**
   - Use OpenAPI/Swagger for API documentation
+  - Maintain up-to-date API docs for Postman to enable testing and community usage
   - Document all endpoints, parameters, and responses
   - Include example requests and responses
 
@@ -733,19 +723,19 @@ DELETE /search/saved/:id                        // Delete a saved search
   - Document design decisions and their rationale
   - Keep a record of rejected alternatives and why
 
-### 5.3 CI/CD Pipeline
+### 6.3 CI/CD Pipeline
 
 - **Continuous Integration**
-  - Run linting and type checking on all pull requests
-  - Execute unit and integration tests
-  - Enforce code coverage thresholds
+  - Automated code quality checks on pull requests
+  - Test execution with reporting
+  - Security scanning for vulnerabilities
 
 - **Continuous Deployment**
   - Automated deployment to staging environment after PR merge
   - Manual approval for production deployments
   - Automated rollback capability for failed deployments
 
-### 5.4 Security Standards
+### 6.4 Security Standards
 
 - **Authentication & Authorization**
   - Use JWT with appropriate expiration times
@@ -754,43 +744,47 @@ DELETE /search/saved/:id                        // Delete a saved search
 
 - **Data Protection**
   - Encrypt sensitive data at rest and in transit
-  - Implement rate limiting for authentication endpoints
+  - Implement gateway level and application level rate limiting
   - Regular security audits and dependency updates
 
-### 5.5 Future Considerations
+### 6.5 Future Considerations
 
 - **Microservice Extraction Strategy**
   - Identify candidates for extraction (notifications, real-time, etc.)
+  - Globally distributed caching with CDN
   - Plan for service boundaries and communication patterns
   - Implement service discovery and API gateway
 
-- **Scaling Approach**
+- **Scaling and Performance**
   - Horizontal scaling for stateless services
-  - Caching strategy for frequently accessed data
-  - Database sharding for large data volumes
-
-- **Search and Database Performance**
-  - Split search database from content database when I/O pressure becomes high
-  - Implement read replicas for search-heavy workloads
-  - Create separate write and read database instances for different traffic patterns
-  - Consider migration to specialized search engines (Elasticsearch, Meilisearch) for advanced search features
-  - Implement database partitioning for historical data
-  - Set up database query performance monitoring and optimization pipeline
+  - Implement read replicas for search and read-heavy workloads
+  - Consider specialized search engines for advanced features, such as MeiliSearch or Elasticsearch
 
 - **Integration Capabilities**
   - Design webhook system for external integrations
   - Create OAuth flow for third-party service connections
-  - Implement API rate limiting and quotas
+  - Empower automations for code, communication and task management platforms, such as GitHub, Slack, Jira,and Trello
 
 - **Analytics and Reporting**
+  - Implement comprehensive performance monitoring
   - Design data warehouse schema for analytics
   - Implement event tracking for user actions
   - Create reporting API for dashboard integration
 
-- **Business and Pricing Strategy Alignment**
-  - Collaborate with business and sales teams to define pricing tiers and feature limitations
-  - Develop usage tracking and metering system for billable features
-  - Implement technical enforcement of tier-based limitations
-  - Create admin dashboard for monitoring usage patterns across customer segments
-  - Design upgrade paths and upsell opportunities based on usage data
-  - Establish feedback loop between technical capabilities and sales strategies
+- **Business and Pricing Strategy**
+  - Align pricing tiers with technical feature limitations
+  - Implement usage tracking and enforcement mechanisms
+  - Create analytics for monitoring customer usage patterns
+
+## Glossary
+
+| Term | Definition |
+| ---- | ---------- |
+| BFF | Backend for Frontend - An architectural pattern where a dedicated backend service is created for a specific frontend application |
+| JWT | JSON Web Token - A compact, URL-safe means of representing claims to be transferred between two parties |
+| RBAC | Role-Based Access Control - An approach to restricting system access to authorized users based on roles |
+| SSR | Server-Side Rendering - The process of rendering web pages on the server and sending fully rendered HTML to the client |
+| UAT | User Acceptance Testing - Testing performed by the end user or client to verify the system meets their requirements |
+| SLO | Service Level Objective - A target level of reliability for a service |
+| S3 | Amazon Simple Storage Service - Object storage service from AWS |
+| GCS | Google Cloud Storage - Object storage service from Google Cloud |
