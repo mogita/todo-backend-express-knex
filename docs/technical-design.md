@@ -392,12 +392,11 @@ flowchart TD
 
 ## 4.1 Frontend Architecture
 
-- **Recommendation**: `Next.js` /  `Remix` implementing BFF pattern
+- **Recommendation**: `React Router v7` implementing BFF pattern
     - Benefits:
         - SSR for initial loads and SEO
         - Client-side navigation
         - API security through BFF layer
-    - Decision needed: Choose between Next.js vs Remix
 - `Tailwind CSS` and `shadcn-ui` for styling
 - Serverless hosting with `Cloudflare workers` or `Vercel`, etc.
 - Optional: `Zustand` for global state management
@@ -1051,51 +1050,62 @@ As the application grows, we recommend evolving the structure to include:
 
 ### 6.3.2 Frontend Structure
 
-The frontend will be implemented with `Next.js` and `Tailwind CSS`, organized as follows:
+The frontend will be implemented with `React Router v7`, `Tailwind CSS` and `Shadcn UI`, organized as follows:
 
 ```
-client/                   # Frontend code directory
-├── src/                  # Source code
-│   ├── app/              # Next.js app directory (for Next.js 13+)
-│   │   ├── (auth)/       # Authentication routes
-│   │   └── [entity]/     # Routes for each entity
-│   ├── components/       # Reusable UI components
-│   │   ├── ui/           # Basic UI components, Tailwind CSS components
-│   │   │   ├── button.tsx # Button component
-│   │   │   └── ...        # Other UI components
-│   │   ├── forms/        # Form components
-│   │   ├── layout/       # Layout components
-│   │   └── ...           # Other component categories
-│   ├── hooks/            # Custom React hooks
-│   │   ├── use-auth.ts   # Authentication hook
-│   │   └── ...           # Other hooks
-│   ├── lib/              # Utility libraries
-│   │   ├── api.ts        # API client
-│   │   ├── utils.ts      # Utility functions
-│   │   └── ...           # Other libraries
-│   ├── store/            # State management on the client side
-│   │   ├── auth-store.ts # Authentication state
-│   │   └── ...           # Other state modules
-│   ├── types/            # TypeScript type definitions for the project
-│   │   ├── api.ts        # API response types
-│   │   └── ...           # Other type definitions
-│   └── styles/           # Global styles
-├── public/               # Static assets
-├── tests/                # Test files
-│   ├── unit/             # Unit tests
-│   ├── integration/      # Integration tests
-│   └── e2e/              # End-to-end tests
-├── .env                  # Environment variables
-├── .env.example          # Example environment variables
-├── package.json          # Project dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-├── next.config.js        # Next.js configuration
-├── tailwind.config.js    # Tailwind CSS configuration
-├── postcss.config.js     # PostCSS configuration
-├── .eslintrc.js          # ESLint configuration
-├── .prettierrc           # Prettier configuration
-├── jest.config.js        # Jest test configuration
-└── README.md             # Project documentation
+client/                      # Frontend code directory
+├── app/                     # Main application code
+│   ├── root.tsx             # Root layout component
+│   ├── routes.ts            # Route configuration
+│   ├── routes/              # Route components
+│   │   ├── home.tsx         # Home route
+│   │   ├── auth/            # Authentication routes
+│   │   │   ├── login.tsx    # Login route
+│   │   │   └── register.tsx # Register route
+│   │   ├── projects/        # Project routes
+│   │   │   ├── index.tsx    # Projects list route
+│   │   │   └── $id.tsx      # Project detail route with ID param
+│   │   └── tasks/           # Task routes
+│   │       ├── index.tsx    # Tasks list route
+│   │       └── $id.tsx      # Task detail route with ID param
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/              # Basic UI components, Tailwind CSS and Shadcn UI components
+│   │   │   ├── button.tsx   # Button component
+│   │   │   └── ...          # Other UI components
+│   │   ├── forms/           # Form components
+│   │   ├── layout/          # Layout components
+│   │   └── ...              # Other component categories
+│   ├── hooks/               # Custom React hooks
+│   │   ├── use-auth.ts      # Authentication hook
+│   │   └── ...              # Other hooks
+│   ├── lib/                 # Utility libraries
+│   │   ├── api.ts           # API client
+│   │   ├── utils.ts         # Utility functions
+│   │   └── ...              # Other libraries
+│   ├── store/               # State management on the client side
+│   │   ├── auth-store.ts    # Authentication state
+│   │   └── ...              # Other state modules
+│   ├── types/               # TypeScript type definitions for the project
+│   │   ├── api.ts           # API response types
+│   │   └── ...              # Other type definitions
+│   └── app.css              # Global styles
+├── public/                  # Static assets
+├── tests/                   # Test files
+│   ├── unit/                # Unit tests
+│   ├── integration/         # Integration tests
+│   └── e2e/                 # End-to-end tests
+├── .env                     # Environment variables
+├── .env.example             # Example environment variables
+├── package.json             # Project dependencies and scripts
+├── tsconfig.json            # TypeScript configuration
+├── react-router.config.ts   # React Router configuration
+├── vite.config.ts           # Vite configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── postcss.config.js        # PostCSS configuration
+├── .eslintrc.js             # ESLint configuration
+├── .prettierrc              # Prettier configuration
+├── jest.config.js           # Jest test configuration
+└── README.md                # Project documentation
 ```
 
 ### 6.3.3 Module Organization Guidelines
