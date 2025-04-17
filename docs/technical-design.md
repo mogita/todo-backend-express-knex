@@ -40,7 +40,7 @@ The document serves as a roadmap for development, outlining both immediate imple
 ## 1.2 Implemented Data Models
 
 > Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at`
-> 
+>
 
 ```sql
 -- Core entities implemented so far
@@ -302,23 +302,23 @@ flowchart TD
     %% Main entry points
     Start([Start]) --> Register[Register New Account]
     Start --> Login[Login to Existing Account]
-    
+
     %% Registration flow
     Register --> CreateOrg[Create Organization]
     CreateOrg --> InviteMembers[Invite Team Members]
     InviteMembers --> SetupProject[Set Up First Project]
     SetupProject --> Dashboard
-    
+
     %% Login flow
     Login --> Dashboard[View Dashboard]
-    
+
     %% Dashboard branches
     Dashboard --> ViewProjects[View Projects]
     Dashboard --> ViewTasks[View My Tasks]
     Dashboard --> SearchContent[Search Content]
     Dashboard --> ViewNotifications[View Notifications]
     Dashboard --> AccountSettings[Account Settings]
-    
+
     %% Projects flow
     ViewProjects --> CreateProject[Create New Project]
     ViewProjects --> SelectProject[Select Existing Project]
@@ -327,7 +327,7 @@ flowchart TD
     ProjectDashboard --> ViewProjectTasks[View Project Tasks]
     ProjectDashboard --> EditProject[Edit Project Details]
     ProjectDashboard --> ArchiveProject[Archive Project]
-    
+
     %% Tasks flow
     ViewTasks --> SelectTask[Select Task]
     ViewProjectTasks --> SelectTask
@@ -339,48 +339,48 @@ flowchart TD
     TaskDetails --> AddComments[Add Comments]
     TaskDetails --> ChangeStatus[Change Task Status]
     AddComments --> MentionUser[Mention Team Member]
-    
+
     %% Search flow
     SearchContent --> FilterResults[Filter Search Results]
     FilterResults --> SaveSearch[Save Search Query]
     FilterResults --> SelectSearchResult[Select Search Result]
     SelectSearchResult --> TaskDetails
     SelectSearchResult --> ProjectDashboard
-    
+
     %% Notifications flow
     ViewNotifications --> SelectNotification[Select Notification]
     SelectNotification --> TaskDetails
     SelectNotification --> ProjectDashboard
-    
+
     %% Account settings flow
     AccountSettings --> UpdateProfile[Update Profile]
     AccountSettings --> ChangePassword[Change Password]
     AccountSettings --> UploadAvatar[Upload Avatar]
     AccountSettings --> NotificationSettings[Manage Notification Settings]
-    
+
     %% Admin specific flows
     Dashboard --> OrgAdmin{Is Admin?}
     OrgAdmin -->|Yes| ManageMembers[Manage Team Members]
     OrgAdmin -->|Yes| ViewSubscription[View Subscription]
-    
+
     %% Team management flow
     ManageMembers --> AddMember[Add New Member]
     ManageMembers --> ChangeMemberRole[Change Member Role]
     ManageMembers --> RemoveMember[Remove Member]
-    
+
     %% Subscription flow
     ViewSubscription --> UpgradeSubscription[Upgrade Subscription]
     ViewSubscription --> ManagePayment[Manage Payment Methods]
     ViewSubscription --> ViewInvoices[View Invoices]
     ViewInvoices --> DownloadInvoice[Download Invoice PDF]
-    
+
     %% Styling
     classDef primary fill:#4285F4,stroke:#0D47A1,color:white
     classDef secondary fill:#34A853,stroke:#0D652D,color:white
     classDef tertiary fill:#FBBC05,stroke:#866102,color:white
     classDef quaternary fill:#EA4335,stroke:#980905,color:white
     classDef decision fill:#9C27B0,stroke:#4A148C,color:white
-    
+
     class Start,Login,Register,Dashboard primary
     class ViewProjects,ViewTasks,ProjectDashboard,TaskDetails secondary
     class CreateTask,AssignTask,AddComments,ChangeStatus tertiary
@@ -392,12 +392,11 @@ flowchart TD
 
 ## 4.1 Frontend Architecture
 
-- **Recommendation**: `Next.js` /  `Remix` implementing BFF pattern
+- **Recommendation**: `React Router v7` implementing BFF pattern
     - Benefits:
         - SSR for initial loads and SEO
         - Client-side navigation
         - API security through BFF layer
-    - Decision needed: Choose between Next.js vs Remix
 - `Tailwind CSS` and `shadcn-ui` for styling
 - Serverless hosting with `Cloudflare workers` or `Vercel`, etc.
 - Optional: `Zustand` for global state management
@@ -439,8 +438,8 @@ flowchart TD
 
 ## 4.3 Data Model Extensions
 
-> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at` unless otherwise noted
-> 
+> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, `updated_at` and `deleted_at` unless otherwise noted
+>
 
 ```sql
 -- Proposed extensions to existing entities
@@ -571,6 +570,7 @@ erDiagram
         string password
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORGANIZATIONS {
@@ -579,6 +579,7 @@ erDiagram
         int owner_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORG_MEMBERS {
@@ -588,6 +589,7 @@ erDiagram
         string role "admin/member"
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Proposed Extensions
@@ -601,6 +603,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Tasks (Renamed and Extended from TODOS)
@@ -618,6 +621,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Collaboration
@@ -628,6 +632,7 @@ erDiagram
         text content
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     NOTIFICATIONS {
@@ -640,6 +645,7 @@ erDiagram
         string related_type
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Billing and Subscriptions
@@ -653,6 +659,7 @@ erDiagram
         boolean is_active
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORG_SUBSCRIPTIONS {
@@ -666,6 +673,7 @@ erDiagram
         string stripe_subscription_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     PAYMENT_METHODS {
@@ -680,6 +688,7 @@ erDiagram
         string stripe_payment_method_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     INVOICES {
@@ -696,6 +705,7 @@ erDiagram
         string stripe_pdf_url
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Media and Attachments
@@ -711,6 +721,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ATTACHABLE_ITEMS {
@@ -720,6 +731,7 @@ erDiagram
         int attachable_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Search
@@ -731,6 +743,7 @@ erDiagram
         jsonb filters
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     SEARCH_INDEX_ITEMS {
@@ -744,6 +757,7 @@ erDiagram
         tsvector ts_vector
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Relationships
@@ -826,9 +840,9 @@ erDiagram
     - Develop invoice generation and management system
     - Implement subscription plan management and feature access control
     - Set up automated billing notifications and reminders
-    
+
     **Stripe Selection:** Cost-effective for B2C with simple pricing tiers; can migrate to Chargebee later for complex enterprise pricing if needed.
-    
+
 8. **Search System**
     - Implement full-text search using `PostgreSQL`'s tsvector/tsquery capabilities
     - Create indexing service to maintain search indices for all content types
@@ -992,7 +1006,121 @@ erDiagram
     - Document design decisions and their rationale
     - Keep a record of rejected alternatives and why
 
-## 6.3 CI/CD Pipeline
+## 6.3 Code Folder Structure
+
+### 6.3.1 Backend Structure
+
+```
+server/                   # Backend server code
+├── database/             # Database queries and connection
+│   ├── connection.ts     # Database connection setup
+│   ├── *-queries.ts      # Business related database queries
+├── handlers/             # Request handlers (controllers)
+│   ├── error-reporting.ts # Error handling utilities
+│   ├── [entity].ts       # Request handlers named after the entity
+├── middlewares/          # Express middleware
+│   ├── jwt.ts            # JWT authentication middleware
+│   └── zod.ts            # Request validation middleware using Zod
+├── migrations/           # Knex database migrations
+│   ├── 20191228160809_create-todos.ts    # Initial todos table creation
+│   ├── [generated_id]_[short-name].ts    # Filename format for additional migrations
+├── schemas/              # Data validation schemas (Zod)
+│   ├── [entity].schema.ts  # Data validation schema for each entity
+├── tests/                # Test files
+│   ├── util/             # Test utilities
+│   ├── [entity].test.ts  # Endpoint tests for each entity
+├── .env                  # Environment variables, should not commit
+├── .env.sample           # Sample environment variables template, should commit and reflects the latest format
+├── knexfile.ts           # Knex configuration
+├── server-config.ts      # Server configuration
+├── server.ts             # Main server entry point
+├── jest.config.js        # Jest test configuration
+└── docs/                 # Documentation
+```
+
+#### Future Backend Structure Recommendations
+
+As the application grows, we recommend evolving the structure to include:
+
+1. **Services Layer**: Add a `services` directory to separate business logic from database queries and request handlers
+2. **Utils Directory**: Create a `utils` directory for shared utility functions
+3. **Types Directory**: Add a `types` directory for TypeScript type definitions
+4. **Seeds Directory**: Add database seed files for development and testing
+5. **Config Directory**: Separate configuration into dedicated files
+
+### 6.3.2 Frontend Structure
+
+The frontend will be implemented with `React Router v7`, `Tailwind CSS` and `Shadcn UI`, organized as follows:
+
+```
+client/                      # Frontend code directory
+├── app/                     # Main application code
+│   ├── root.tsx             # Root layout component
+│   ├── routes.ts            # Route configuration
+│   ├── routes/              # Route components
+│   │   ├── home.tsx         # Home route
+│   │   ├── auth/            # Authentication routes
+│   │   │   ├── login.tsx    # Login route
+│   │   │   └── register.tsx # Register route
+│   │   ├── projects/        # Project routes
+│   │   │   ├── index.tsx    # Projects list route
+│   │   │   └── $id.tsx      # Project detail route with ID param
+│   │   └── tasks/           # Task routes
+│   │       ├── index.tsx    # Tasks list route
+│   │       └── $id.tsx      # Task detail route with ID param
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/              # Basic UI components, Tailwind CSS and Shadcn UI components
+│   │   │   ├── button.tsx   # Button component
+│   │   │   └── ...          # Other UI components
+│   │   ├── forms/           # Form components
+│   │   ├── layout/          # Layout components
+│   │   └── ...              # Other component categories
+│   ├── hooks/               # Custom React hooks
+│   │   ├── use-auth.ts      # Authentication hook
+│   │   └── ...              # Other hooks
+│   ├── lib/                 # Utility libraries
+│   │   ├── api.ts           # API client
+│   │   ├── utils.ts         # Utility functions
+│   │   └── ...              # Other libraries
+│   ├── store/               # State management on the client side
+│   │   ├── auth-store.ts    # Authentication state
+│   │   └── ...              # Other state modules
+│   ├── types/               # TypeScript type definitions for the project
+│   │   ├── api.ts           # API response types
+│   │   └── ...              # Other type definitions
+│   └── app.css              # Global styles
+├── public/                  # Static assets
+├── tests/                   # Test files
+│   ├── unit/                # Unit tests
+│   ├── integration/         # Integration tests
+│   └── e2e/                 # End-to-end tests
+├── .env                     # Environment variables
+├── .env.example             # Example environment variables
+├── package.json             # Project dependencies and scripts
+├── tsconfig.json            # TypeScript configuration
+├── react-router.config.ts   # React Router configuration
+├── vite.config.ts           # Vite configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── postcss.config.js        # PostCSS configuration
+├── .eslintrc.js             # ESLint configuration
+├── .prettierrc              # Prettier configuration
+├── jest.config.js           # Jest test configuration
+└── README.md                # Project documentation
+```
+
+### 6.3.3 Module Organization Guidelines
+
+1. **Feature-based Organization**: Group related files by feature or domain rather than by technical role.
+2. **Consistent Naming**: Use consistent naming conventions across the codebase.
+   - Use kebab-case for file names (e.g., `auth-service.ts`, `project-controller.ts`)
+   - Use PascalCase for component names and class names (e.g., `ProjectCard.tsx`, `AuthService`)
+   - Use camelCase for variables, functions, and instances (e.g., `getUserById`, `projectService`)
+3. **Barrel Files**: Use index files (barrel files) to simplify imports from directories.
+4. **Relative Imports**: Use relative imports for files within the same module and absolute imports for cross-module dependencies.
+5. **Separation of Concerns**: Keep business logic separate from presentation logic.
+6. **Test Proximity**: Place test files close to the code they test, either in a parallel test directory or with a `.test.ts` suffix.
+
+## 6.4 CI/CD Pipeline
 
 - **Continuous Integration**
     - Automated code quality checks on pull requests
@@ -1003,16 +1131,114 @@ erDiagram
     - Manual approval for production deployments
     - Automated rollback capability for failed deployments
 
-## 6.4 Security Standards
+## 6.5 Security and Production Readiness
+
+### 6.5.1 Security Standards
 
 - **Authentication & Authorization**
-    - Use JWT with appropriate expiration times
-    - Implement refresh token rotation
+    - Use JWT with short expiration times (15-30 minutes)
+    - Implement secure refresh token rotation with proper invalidation
     - Apply principle of least privilege for all operations
+    - Implement proper session management with secure cookie settings
+    - Use strong password hashing with bcrypt (min. cost factor 12)
+    - Implement account lockout after failed login attempts
+    - Add two-factor authentication for sensitive operations
+    - Implement proper CORS configuration with specific origins
+
 - **Data Protection**
-    - Encrypt sensitive data at rest and in transit
-    - Implement gateway level and application level rate limiting
-    - Regular security audits and dependency updates
+    - Encrypt sensitive data at rest using AES-256
+    - Use TLS 1.3 for all data in transit
+    - Implement database column-level encryption for PII
+    - Implement proper data sanitization and validation
+    - Apply strict Content Security Policy (CSP) headers
+    - Implement proper data backup and recovery procedures
+    - Add data retention and deletion policies compliant with regulations
+
+- **API Security**
+    - Implement proper input validation for all API endpoints
+    - Add rate limiting and throttling to prevent abuse
+    - Use API keys with proper scopes for service-to-service communication
+    - Implement proper error handling that doesn't leak sensitive information
+    - Add request signing for critical operations
+    - Implement proper logging of security events
+    - Use API versioning to manage changes securely
+
+- **Infrastructure Security**
+    - Use infrastructure as code with security scanning
+    - Implement network segmentation and proper firewall rules
+    - Apply the principle of least privilege to service accounts
+    - Use secrets management solutions (AWS Secrets Manager, HashiCorp Vault)
+    - Implement proper container security with minimal base images
+    - Regular vulnerability scanning of infrastructure components
+    - Implement proper key rotation procedures
+
+### 6.5.2 Production Middleware Stack
+
+The following middleware will be implemented to ensure a robust and secure production application:
+
+- **Security Middleware**
+    - **Helmet.js**: Configure security headers (CSP, HSTS, XSS Protection, etc.)
+    - **CORS**: Implement proper Cross-Origin Resource Sharing with specific allowed origins
+    - **Rate Limiting**: Protect against brute force and DoS attacks
+    - **Content Validation**: Validate request bodies, parameters, and headers
+    - **JWT Verification**: Validate and verify JWT tokens for authentication
+
+- **Operational Middleware**
+    - **Request ID**: Generate unique IDs for each request for tracing
+    - **Logging**: Structured logging with proper redaction of sensitive data
+    - **Error Handling**: Centralized error handling with proper client responses
+    - **Compression**: Compress responses to improve performance
+    - **Timeout Handling**: Implement request timeouts to prevent hanging connections
+
+- **Performance Middleware**
+    - **Caching**: Implement response caching for appropriate endpoints
+    - **ETags**: Support conditional requests to reduce bandwidth
+    - **Pagination**: Enforce pagination for list endpoints
+    - **Query Optimization**: Analyze and optimize database queries
+    - **Response Streaming**: Stream large responses to improve performance
+
+- **Monitoring Middleware**
+    - **Performance Metrics**: Collect timing metrics for each request
+    - **Health Checks**: Implement health check endpoints for load balancers
+    - **Resource Monitoring**: Track memory and CPU usage
+    - **Circuit Breakers**: Implement circuit breakers for external dependencies
+    - **Dependency Checks**: Verify connectivity to required services
+
+### 6.5.3 Production Deployment Architecture
+
+The application will be deployed using a containerized approach with Kubernetes for orchestration:
+
+- **Containerization**
+    - Use multi-stage Docker builds to minimize image size
+    - Implement proper health checks in container definitions
+    - Use non-root users in containers for security
+    - Implement proper resource limits and requests
+    - Scan container images for vulnerabilities before deployment
+
+- **Kubernetes Configuration**
+    - Implement proper pod security policies
+    - Use namespaces for environment separation
+    - Configure network policies to restrict pod-to-pod communication
+    - Implement proper resource quotas and limits
+    - Use Kubernetes secrets for sensitive configuration
+    - Configure horizontal pod autoscaling based on metrics
+    - Implement proper liveness and readiness probes
+
+- **API Gateway Architecture**
+    - Deploy an API Gateway (Kong, AWS API Gateway, etc.) as the entry point
+    - Implement proper request routing and load balancing
+    - Configure rate limiting and throttling at the gateway level
+    - Implement request transformation and validation
+    - Configure proper TLS termination and certificate management
+    - Implement proper logging and monitoring at the gateway level
+
+- **Database Configuration**
+    - Implement connection pooling with proper sizing
+    - Configure read replicas for read-heavy workloads
+    - Implement proper backup and recovery procedures
+    - Configure proper monitoring and alerting
+    - Implement proper database security (network, access controls)
+    - Use database proxies for connection management when appropriate
 
 # Part 7: Future Considerations
 
