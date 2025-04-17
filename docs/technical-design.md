@@ -1012,49 +1012,31 @@ erDiagram
 ### 6.3.1 Backend Structure
 
 ```
-/
-├── server/                   # Backend server code
-│   ├── database/             # Database queries and connection
-│   │   ├── connection.ts     # Database connection setup
-│   │   ├── user-queries.ts   # User-related database queries
-│   │   ├── org-queries.ts    # Organization-related database queries
-│   │   ├── orgmember-queries.ts # Organization membership queries
-│   │   ├── project-queries.ts # Project-related database queries
-│   │   └── todo-queries.ts   # Todo-related database queries
-│   ├── handlers/             # Request handlers (controllers)
-│   │   ├── error-reporting.ts # Error handling utilities
-│   │   ├── user.ts           # User-related request handlers
-│   │   ├── org.ts            # Organization-related request handlers
-│   │   ├── orgmember.ts      # Organization membership handlers
-│   │   ├── project.ts        # Project-related request handlers
-│   │   └── todo.ts           # Todo-related request handlers
-│   ├── middlewares/          # Express middleware
-│   │   ├── jwt.ts            # JWT authentication middleware
-│   │   └── zod.ts            # Request validation middleware using Zod
-│   ├── migrations/           # Knex database migrations
-│   │   ├── 20191228160809_create-todos.ts    # Initial todos table creation
-│   │   ├── 20250330083515_add_projects.ts    # Projects table addition
-│   │   └── 20250403115046_add_user_org_membership.ts # User-org membership
-│   ├── schemas/              # Data validation schemas (Zod)
-│   │   ├── user.schema.ts    # User data validation schema
-│   │   ├── org.schema.ts     # Organization data validation schema
-│   │   ├── orgmember.schema.ts # Organization membership schema
-│   │   ├── project.schema.ts # Project data validation schema
-│   │   └── todo.schema.ts    # Todo data validation schema
-│   ├── tests/                # Test files
-│   │   ├── util/             # Test utilities
-│   │   ├── user.test.ts      # User endpoint tests
-│   │   ├── org.test.ts       # Organization endpoint tests
-│   │   ├── orgmember.test.ts # Organization membership tests
-│   │   ├── project.test.ts   # Project endpoint tests
-│   │   └── todo.test.ts      # Todo endpoint tests
-│   ├── .env                  # Environment variables
-│   ├── .env.sample           # Sample environment variables template
-│   ├── knexfile.ts           # Knex configuration
-│   ├── server-config.ts      # Server configuration
-│   ├── server.ts             # Main server entry point
-│   └── jest.config.js        # Jest test configuration
-└── docs/                     # Documentation
+server/                   # Backend server code
+├── database/             # Database queries and connection
+│   ├── connection.ts     # Database connection setup
+│   ├── *-queries.ts      # Business related database queries
+├── handlers/             # Request handlers (controllers)
+│   ├── error-reporting.ts # Error handling utilities
+│   ├── [entity].ts       # Request handlers named after the entity
+├── middlewares/          # Express middleware
+│   ├── jwt.ts            # JWT authentication middleware
+│   └── zod.ts            # Request validation middleware using Zod
+├── migrations/           # Knex database migrations
+│   ├── 20191228160809_create-todos.ts    # Initial todos table creation
+│   ├── [generated_id]_[short-name].ts    # Filename format for additional migrations
+├── schemas/              # Data validation schemas (Zod)
+│   ├── [entity].schema.ts  # Data validation schema for each entity
+├── tests/                # Test files
+│   ├── util/             # Test utilities
+│   ├── [entity].test.ts  # Endpoint tests for each entity
+├── .env                  # Environment variables, should not commit
+├── .env.sample           # Sample environment variables template, should commit and reflects the latest format
+├── knexfile.ts           # Knex configuration
+├── server-config.ts      # Server configuration
+├── server.ts             # Main server entry point
+├── jest.config.js        # Jest test configuration
+└── docs/                 # Documentation
 ```
 
 #### Future Backend Structure Recommendations
@@ -1069,46 +1051,51 @@ As the application grows, we recommend evolving the structure to include:
 
 ### 6.3.2 Frontend Structure
 
-Suppose the frontend is implemented with `Next.js` and `Tailwind CSS`.
+The frontend will be implemented with `Next.js` and `Tailwind CSS`, organized as follows:
 
 ```
-/
-├── src/                      # Source code
-│   ├── app/                  # Next.js app directory (for Next.js 13+)
-│   │   ├── (auth)/           # Authentication routes
-│   │   ├── dashboard/        # Dashboard routes
-│   │   ├── projects/         # Project routes
-│   │   └── ...               # Other route groups
-│   ├── components/           # Reusable UI components
-│   │   ├── ui/               # Basic UI components
-│   │   │   ├── button.tsx    # Button component
-│   │   │   └── ...           # Other UI components
-│   │   ├── forms/            # Form components
-│   │   ├── layout/           # Layout components
-│   │   └── ...               # Other component categories
-│   ├── hooks/                # Custom React hooks
-│   │   ├── use-auth.ts       # Authentication hook
-│   │   ├── use-projects.ts   # Projects data hook
-│   │   └── ...               # Other hooks
-│   ├── lib/                  # Utility libraries
-│   │   ├── api.ts            # API client
-│   │   ├── utils.ts          # Utility functions
-│   │   └── ...               # Other libraries
-│   ├── store/                # State management
-│   │   ├── auth-store.ts     # Authentication state
-│   │   ├── project-store.ts  # Project state
-│   │   └── ...               # Other state modules
-│   ├── types/                # TypeScript type definitions
-│   │   ├── api.ts            # API response types
-│   │   ├── models.ts         # Data model types
-│   │   └── ...               # Other type definitions
-│   └── styles/               # Global styles
-├── public/                   # Static assets
-├── tests/                    # Test files
-│   ├── unit/                 # Unit tests
-│   ├── integration/          # Integration tests
-│   └── e2e/                  # End-to-end tests
-└── .env.example              # Example environment variables
+client/                   # Frontend code directory
+├── src/                  # Source code
+│   ├── app/              # Next.js app directory (for Next.js 13+)
+│   │   ├── (auth)/       # Authentication routes
+│   │   └── [entity]/     # Routes for each entity
+│   ├── components/       # Reusable UI components
+│   │   ├── ui/           # Basic UI components, Tailwind CSS components
+│   │   │   ├── button.tsx # Button component
+│   │   │   └── ...        # Other UI components
+│   │   ├── forms/        # Form components
+│   │   ├── layout/       # Layout components
+│   │   └── ...           # Other component categories
+│   ├── hooks/            # Custom React hooks
+│   │   ├── use-auth.ts   # Authentication hook
+│   │   └── ...           # Other hooks
+│   ├── lib/              # Utility libraries
+│   │   ├── api.ts        # API client
+│   │   ├── utils.ts      # Utility functions
+│   │   └── ...           # Other libraries
+│   ├── store/            # State management on the client side
+│   │   ├── auth-store.ts # Authentication state
+│   │   └── ...           # Other state modules
+│   ├── types/            # TypeScript type definitions for the project
+│   │   ├── api.ts        # API response types
+│   │   └── ...           # Other type definitions
+│   └── styles/           # Global styles
+├── public/               # Static assets
+├── tests/                # Test files
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   └── e2e/              # End-to-end tests
+├── .env                  # Environment variables
+├── .env.example          # Example environment variables
+├── package.json          # Project dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+├── next.config.js        # Next.js configuration
+├── tailwind.config.js    # Tailwind CSS configuration
+├── postcss.config.js     # PostCSS configuration
+├── .eslintrc.js          # ESLint configuration
+├── .prettierrc           # Prettier configuration
+├── jest.config.js        # Jest test configuration
+└── README.md             # Project documentation
 ```
 
 ### 6.3.3 Module Organization Guidelines
@@ -1134,16 +1121,114 @@ Suppose the frontend is implemented with `Next.js` and `Tailwind CSS`.
     - Manual approval for production deployments
     - Automated rollback capability for failed deployments
 
-## 6.5 Security Standards
+## 6.5 Security and Production Readiness
+
+### 6.5.1 Security Standards
 
 - **Authentication & Authorization**
-    - Use JWT with appropriate expiration times
-    - Implement refresh token rotation
+    - Use JWT with short expiration times (15-30 minutes)
+    - Implement secure refresh token rotation with proper invalidation
     - Apply principle of least privilege for all operations
+    - Implement proper session management with secure cookie settings
+    - Use strong password hashing with bcrypt (min. cost factor 12)
+    - Implement account lockout after failed login attempts
+    - Add two-factor authentication for sensitive operations
+    - Implement proper CORS configuration with specific origins
+
 - **Data Protection**
-    - Encrypt sensitive data at rest and in transit
-    - Implement gateway level and application level rate limiting
-    - Regular security audits and dependency updates
+    - Encrypt sensitive data at rest using AES-256
+    - Use TLS 1.3 for all data in transit
+    - Implement database column-level encryption for PII
+    - Implement proper data sanitization and validation
+    - Apply strict Content Security Policy (CSP) headers
+    - Implement proper data backup and recovery procedures
+    - Add data retention and deletion policies compliant with regulations
+
+- **API Security**
+    - Implement proper input validation for all API endpoints
+    - Add rate limiting and throttling to prevent abuse
+    - Use API keys with proper scopes for service-to-service communication
+    - Implement proper error handling that doesn't leak sensitive information
+    - Add request signing for critical operations
+    - Implement proper logging of security events
+    - Use API versioning to manage changes securely
+
+- **Infrastructure Security**
+    - Use infrastructure as code with security scanning
+    - Implement network segmentation and proper firewall rules
+    - Apply the principle of least privilege to service accounts
+    - Use secrets management solutions (AWS Secrets Manager, HashiCorp Vault)
+    - Implement proper container security with minimal base images
+    - Regular vulnerability scanning of infrastructure components
+    - Implement proper key rotation procedures
+
+### 6.5.2 Production Middleware Stack
+
+The following middleware will be implemented to ensure a robust and secure production application:
+
+- **Security Middleware**
+    - **Helmet.js**: Configure security headers (CSP, HSTS, XSS Protection, etc.)
+    - **CORS**: Implement proper Cross-Origin Resource Sharing with specific allowed origins
+    - **Rate Limiting**: Protect against brute force and DoS attacks
+    - **Content Validation**: Validate request bodies, parameters, and headers
+    - **JWT Verification**: Validate and verify JWT tokens for authentication
+
+- **Operational Middleware**
+    - **Request ID**: Generate unique IDs for each request for tracing
+    - **Logging**: Structured logging with proper redaction of sensitive data
+    - **Error Handling**: Centralized error handling with proper client responses
+    - **Compression**: Compress responses to improve performance
+    - **Timeout Handling**: Implement request timeouts to prevent hanging connections
+
+- **Performance Middleware**
+    - **Caching**: Implement response caching for appropriate endpoints
+    - **ETags**: Support conditional requests to reduce bandwidth
+    - **Pagination**: Enforce pagination for list endpoints
+    - **Query Optimization**: Analyze and optimize database queries
+    - **Response Streaming**: Stream large responses to improve performance
+
+- **Monitoring Middleware**
+    - **Performance Metrics**: Collect timing metrics for each request
+    - **Health Checks**: Implement health check endpoints for load balancers
+    - **Resource Monitoring**: Track memory and CPU usage
+    - **Circuit Breakers**: Implement circuit breakers for external dependencies
+    - **Dependency Checks**: Verify connectivity to required services
+
+### 6.5.3 Production Deployment Architecture
+
+The application will be deployed using a containerized approach with Kubernetes for orchestration:
+
+- **Containerization**
+    - Use multi-stage Docker builds to minimize image size
+    - Implement proper health checks in container definitions
+    - Use non-root users in containers for security
+    - Implement proper resource limits and requests
+    - Scan container images for vulnerabilities before deployment
+
+- **Kubernetes Configuration**
+    - Implement proper pod security policies
+    - Use namespaces for environment separation
+    - Configure network policies to restrict pod-to-pod communication
+    - Implement proper resource quotas and limits
+    - Use Kubernetes secrets for sensitive configuration
+    - Configure horizontal pod autoscaling based on metrics
+    - Implement proper liveness and readiness probes
+
+- **API Gateway Architecture**
+    - Deploy an API Gateway (Kong, AWS API Gateway, etc.) as the entry point
+    - Implement proper request routing and load balancing
+    - Configure rate limiting and throttling at the gateway level
+    - Implement request transformation and validation
+    - Configure proper TLS termination and certificate management
+    - Implement proper logging and monitoring at the gateway level
+
+- **Database Configuration**
+    - Implement connection pooling with proper sizing
+    - Configure read replicas for read-heavy workloads
+    - Implement proper backup and recovery procedures
+    - Configure proper monitoring and alerting
+    - Implement proper database security (network, access controls)
+    - Use database proxies for connection management when appropriate
 
 # Part 7: Future Considerations
 
