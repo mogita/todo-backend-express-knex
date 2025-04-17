@@ -40,7 +40,7 @@ The document serves as a roadmap for development, outlining both immediate imple
 ## 1.2 Implemented Data Models
 
 > Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at`
-> 
+>
 
 ```sql
 -- Core entities implemented so far
@@ -302,23 +302,23 @@ flowchart TD
     %% Main entry points
     Start([Start]) --> Register[Register New Account]
     Start --> Login[Login to Existing Account]
-    
+
     %% Registration flow
     Register --> CreateOrg[Create Organization]
     CreateOrg --> InviteMembers[Invite Team Members]
     InviteMembers --> SetupProject[Set Up First Project]
     SetupProject --> Dashboard
-    
+
     %% Login flow
     Login --> Dashboard[View Dashboard]
-    
+
     %% Dashboard branches
     Dashboard --> ViewProjects[View Projects]
     Dashboard --> ViewTasks[View My Tasks]
     Dashboard --> SearchContent[Search Content]
     Dashboard --> ViewNotifications[View Notifications]
     Dashboard --> AccountSettings[Account Settings]
-    
+
     %% Projects flow
     ViewProjects --> CreateProject[Create New Project]
     ViewProjects --> SelectProject[Select Existing Project]
@@ -327,7 +327,7 @@ flowchart TD
     ProjectDashboard --> ViewProjectTasks[View Project Tasks]
     ProjectDashboard --> EditProject[Edit Project Details]
     ProjectDashboard --> ArchiveProject[Archive Project]
-    
+
     %% Tasks flow
     ViewTasks --> SelectTask[Select Task]
     ViewProjectTasks --> SelectTask
@@ -339,48 +339,48 @@ flowchart TD
     TaskDetails --> AddComments[Add Comments]
     TaskDetails --> ChangeStatus[Change Task Status]
     AddComments --> MentionUser[Mention Team Member]
-    
+
     %% Search flow
     SearchContent --> FilterResults[Filter Search Results]
     FilterResults --> SaveSearch[Save Search Query]
     FilterResults --> SelectSearchResult[Select Search Result]
     SelectSearchResult --> TaskDetails
     SelectSearchResult --> ProjectDashboard
-    
+
     %% Notifications flow
     ViewNotifications --> SelectNotification[Select Notification]
     SelectNotification --> TaskDetails
     SelectNotification --> ProjectDashboard
-    
+
     %% Account settings flow
     AccountSettings --> UpdateProfile[Update Profile]
     AccountSettings --> ChangePassword[Change Password]
     AccountSettings --> UploadAvatar[Upload Avatar]
     AccountSettings --> NotificationSettings[Manage Notification Settings]
-    
+
     %% Admin specific flows
     Dashboard --> OrgAdmin{Is Admin?}
     OrgAdmin -->|Yes| ManageMembers[Manage Team Members]
     OrgAdmin -->|Yes| ViewSubscription[View Subscription]
-    
+
     %% Team management flow
     ManageMembers --> AddMember[Add New Member]
     ManageMembers --> ChangeMemberRole[Change Member Role]
     ManageMembers --> RemoveMember[Remove Member]
-    
+
     %% Subscription flow
     ViewSubscription --> UpgradeSubscription[Upgrade Subscription]
     ViewSubscription --> ManagePayment[Manage Payment Methods]
     ViewSubscription --> ViewInvoices[View Invoices]
     ViewInvoices --> DownloadInvoice[Download Invoice PDF]
-    
+
     %% Styling
     classDef primary fill:#4285F4,stroke:#0D47A1,color:white
     classDef secondary fill:#34A853,stroke:#0D652D,color:white
     classDef tertiary fill:#FBBC05,stroke:#866102,color:white
     classDef quaternary fill:#EA4335,stroke:#980905,color:white
     classDef decision fill:#9C27B0,stroke:#4A148C,color:white
-    
+
     class Start,Login,Register,Dashboard primary
     class ViewProjects,ViewTasks,ProjectDashboard,TaskDetails secondary
     class CreateTask,AssignTask,AddComments,ChangeStatus tertiary
@@ -439,8 +439,8 @@ flowchart TD
 
 ## 4.3 Data Model Extensions
 
-> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, and `updated_at` unless otherwise noted
-> 
+> Note: All tables include standard fields: `id` (PRIMARY KEY), `created_at`, `updated_at` and `deleted_at` unless otherwise noted
+>
 
 ```sql
 -- Proposed extensions to existing entities
@@ -571,6 +571,7 @@ erDiagram
         string password
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORGANIZATIONS {
@@ -579,6 +580,7 @@ erDiagram
         int owner_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORG_MEMBERS {
@@ -588,6 +590,7 @@ erDiagram
         string role "admin/member"
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Proposed Extensions
@@ -601,6 +604,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Tasks (Renamed and Extended from TODOS)
@@ -618,6 +622,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Collaboration
@@ -628,6 +633,7 @@ erDiagram
         text content
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     NOTIFICATIONS {
@@ -640,6 +646,7 @@ erDiagram
         string related_type
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Billing and Subscriptions
@@ -653,6 +660,7 @@ erDiagram
         boolean is_active
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ORG_SUBSCRIPTIONS {
@@ -666,6 +674,7 @@ erDiagram
         string stripe_subscription_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     PAYMENT_METHODS {
@@ -680,6 +689,7 @@ erDiagram
         string stripe_payment_method_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     INVOICES {
@@ -696,6 +706,7 @@ erDiagram
         string stripe_pdf_url
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Media and Attachments
@@ -711,6 +722,7 @@ erDiagram
         int org_id FK
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     ATTACHABLE_ITEMS {
@@ -720,6 +732,7 @@ erDiagram
         int attachable_id
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Search
@@ -731,6 +744,7 @@ erDiagram
         jsonb filters
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     SEARCH_INDEX_ITEMS {
@@ -744,6 +758,7 @@ erDiagram
         tsvector ts_vector
         datetime created_at
         datetime updated_at
+        datetime deleted_at
     }
 
     %% Relationships
@@ -826,9 +841,9 @@ erDiagram
     - Develop invoice generation and management system
     - Implement subscription plan management and feature access control
     - Set up automated billing notifications and reminders
-    
+
     **Stripe Selection:** Cost-effective for B2C with simple pricing tiers; can migrate to Chargebee later for complex enterprise pricing if needed.
-    
+
 8. **Search System**
     - Implement full-text search using `PostgreSQL`'s tsvector/tsquery capabilities
     - Create indexing service to maintain search indices for all content types
@@ -992,7 +1007,123 @@ erDiagram
     - Document design decisions and their rationale
     - Keep a record of rejected alternatives and why
 
-## 6.3 CI/CD Pipeline
+## 6.3 Code Folder Structure
+
+### 6.3.1 Backend Structure
+
+```
+/
+├── server/                   # Backend server code
+│   ├── database/             # Database queries and connection
+│   │   ├── connection.ts     # Database connection setup
+│   │   ├── user-queries.ts   # User-related database queries
+│   │   ├── org-queries.ts    # Organization-related database queries
+│   │   ├── orgmember-queries.ts # Organization membership queries
+│   │   ├── project-queries.ts # Project-related database queries
+│   │   └── todo-queries.ts   # Todo-related database queries
+│   ├── handlers/             # Request handlers (controllers)
+│   │   ├── error-reporting.ts # Error handling utilities
+│   │   ├── user.ts           # User-related request handlers
+│   │   ├── org.ts            # Organization-related request handlers
+│   │   ├── orgmember.ts      # Organization membership handlers
+│   │   ├── project.ts        # Project-related request handlers
+│   │   └── todo.ts           # Todo-related request handlers
+│   ├── middlewares/          # Express middleware
+│   │   ├── jwt.ts            # JWT authentication middleware
+│   │   └── zod.ts            # Request validation middleware using Zod
+│   ├── migrations/           # Knex database migrations
+│   │   ├── 20191228160809_create-todos.ts    # Initial todos table creation
+│   │   ├── 20250330083515_add_projects.ts    # Projects table addition
+│   │   └── 20250403115046_add_user_org_membership.ts # User-org membership
+│   ├── schemas/              # Data validation schemas (Zod)
+│   │   ├── user.schema.ts    # User data validation schema
+│   │   ├── org.schema.ts     # Organization data validation schema
+│   │   ├── orgmember.schema.ts # Organization membership schema
+│   │   ├── project.schema.ts # Project data validation schema
+│   │   └── todo.schema.ts    # Todo data validation schema
+│   ├── tests/                # Test files
+│   │   ├── util/             # Test utilities
+│   │   ├── user.test.ts      # User endpoint tests
+│   │   ├── org.test.ts       # Organization endpoint tests
+│   │   ├── orgmember.test.ts # Organization membership tests
+│   │   ├── project.test.ts   # Project endpoint tests
+│   │   └── todo.test.ts      # Todo endpoint tests
+│   ├── .env                  # Environment variables
+│   ├── .env.sample           # Sample environment variables template
+│   ├── knexfile.ts           # Knex configuration
+│   ├── server-config.ts      # Server configuration
+│   ├── server.ts             # Main server entry point
+│   └── jest.config.js        # Jest test configuration
+└── docs/                     # Documentation
+```
+
+#### Future Backend Structure Recommendations
+
+As the application grows, we recommend evolving the structure to include:
+
+1. **Services Layer**: Add a `services` directory to separate business logic from database queries and request handlers
+2. **Utils Directory**: Create a `utils` directory for shared utility functions
+3. **Types Directory**: Add a `types` directory for TypeScript type definitions
+4. **Seeds Directory**: Add database seed files for development and testing
+5. **Config Directory**: Separate configuration into dedicated files
+
+### 6.3.2 Frontend Structure
+
+Suppose the frontend is implemented with `Next.js` and `Tailwind CSS`.
+
+```
+/
+├── src/                      # Source code
+│   ├── app/                  # Next.js app directory (for Next.js 13+)
+│   │   ├── (auth)/           # Authentication routes
+│   │   ├── dashboard/        # Dashboard routes
+│   │   ├── projects/         # Project routes
+│   │   └── ...               # Other route groups
+│   ├── components/           # Reusable UI components
+│   │   ├── ui/               # Basic UI components
+│   │   │   ├── button.tsx    # Button component
+│   │   │   └── ...           # Other UI components
+│   │   ├── forms/            # Form components
+│   │   ├── layout/           # Layout components
+│   │   └── ...               # Other component categories
+│   ├── hooks/                # Custom React hooks
+│   │   ├── use-auth.ts       # Authentication hook
+│   │   ├── use-projects.ts   # Projects data hook
+│   │   └── ...               # Other hooks
+│   ├── lib/                  # Utility libraries
+│   │   ├── api.ts            # API client
+│   │   ├── utils.ts          # Utility functions
+│   │   └── ...               # Other libraries
+│   ├── store/                # State management
+│   │   ├── auth-store.ts     # Authentication state
+│   │   ├── project-store.ts  # Project state
+│   │   └── ...               # Other state modules
+│   ├── types/                # TypeScript type definitions
+│   │   ├── api.ts            # API response types
+│   │   ├── models.ts         # Data model types
+│   │   └── ...               # Other type definitions
+│   └── styles/               # Global styles
+├── public/                   # Static assets
+├── tests/                    # Test files
+│   ├── unit/                 # Unit tests
+│   ├── integration/          # Integration tests
+│   └── e2e/                  # End-to-end tests
+└── .env.example              # Example environment variables
+```
+
+### 6.3.3 Module Organization Guidelines
+
+1. **Feature-based Organization**: Group related files by feature or domain rather than by technical role.
+2. **Consistent Naming**: Use consistent naming conventions across the codebase.
+   - Use kebab-case for file names (e.g., `auth-service.ts`, `project-controller.ts`)
+   - Use PascalCase for component names and class names (e.g., `ProjectCard.tsx`, `AuthService`)
+   - Use camelCase for variables, functions, and instances (e.g., `getUserById`, `projectService`)
+3. **Barrel Files**: Use index files (barrel files) to simplify imports from directories.
+4. **Relative Imports**: Use relative imports for files within the same module and absolute imports for cross-module dependencies.
+5. **Separation of Concerns**: Keep business logic separate from presentation logic.
+6. **Test Proximity**: Place test files close to the code they test, either in a parallel test directory or with a `.test.ts` suffix.
+
+## 6.4 CI/CD Pipeline
 
 - **Continuous Integration**
     - Automated code quality checks on pull requests
@@ -1003,7 +1134,7 @@ erDiagram
     - Manual approval for production deployments
     - Automated rollback capability for failed deployments
 
-## 6.4 Security Standards
+## 6.5 Security Standards
 
 - **Authentication & Authorization**
     - Use JWT with appropriate expiration times
